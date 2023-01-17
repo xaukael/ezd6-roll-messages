@@ -21,7 +21,7 @@
       }
     ]
   },
-  "url": "",
-  "manifest": "",
-  "download": ""
+  "url": "https://github.com/xaukael/ezd6-roll-messages/",
+    "manifest": "https://github.com/xaukael/ezd6-roll-messages/raw/main/module.json",
+    "download": "https://github.com/xaukael/ezd6-roll-messages/raw/main/ezd6-roll-messages.zip"
 }
