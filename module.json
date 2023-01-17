@@ -4,11 +4,13 @@
   "name": "ezd6-roll-messages",
   "title": "EZD6 Roll Messages",
   "description": "Roll Message Formatting for EZD6",
-  "author": "Xaukael",
+  "authors": [{"name":"Xaukael"}],
   "version": "1.7.2",
 	"socket": true,
-  "minimumCoreVersion": "10",
-  "compatibleCoreVersion": "10",
+  "compatibility": {
+      "minimum": "9",
+      "verified": "10"
+    },
   "scripts": ["ezd6-roll-messages.js"],
   "relationships": {
   "requires": [

@@ -4,7 +4,6 @@ ezd6.herodice = `<i class="fa-solid fa-square" style="color:limegreen;background
 ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset;"></i>`;
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset;"></i>';
 
-/*
 ezd6.updateChatMessage = async function(id, update) {
   return await game.messages.get(id).update(update);
 }
@@ -13,7 +12,6 @@ Hooks.once("socketlib.ready", () => {
 	ezd6.socket = socketlib.registerModule("ezd6-roll-messages");
 	ezd6.socket.register("updateChatMessage", ezd6.updateChatMessage);
 });
-*/
 
 Hooks.on('renderEZD6CharacterSheet', (app, html)=>{
   let actor = app.object;
@@ -148,8 +146,8 @@ Hooks.on('renderChatMessage', (message, html)=>{
     results[index].result = roll + ((!game.user.isGM && message.user.isGM)?-1:1);
     if (results[index].hasOwnProperty('success') && results[index].result==6) results[index].success = true;
     actions.push(`${game.user.character?.name || game.user.name} used a Karma on die ${index+1} - ${ezd6.karma}`);
-    await message.update({flags:{ezd6:{results, actions}}});
-    //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
+    //await message.update({flags:{ezd6:{results, actions}}});
+    await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
     await game.user.character.update({system:{karma:game.user.character.system.karma-1}});
   });
 
@@ -168,8 +166,8 @@ Hooks.on('renderChatMessage', (message, html)=>{
     results[index].result = hd.total;
     actions.push(`${game.user.character?.name || game.user.name} used a Hero Die on die ${index+1} - ${ezd6.herodice}</i>`);
     if (results[index].hasOwnProperty('success') && results[index].result==6) results[index].success = true;
-    await message.update({flags:{ezd6:{results, actions}}})
-    //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
+    //await message.update({flags:{ezd6:{results, actions}}})
+    await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
     await game.user.character.update({system:{herodice:game.user.character.system.herodice-1}});
   });
 })
