@@ -8,7 +8,7 @@
   "version": "1.7.2",
 	"socket": true,
   "compatibility": {
-      "minimum": "9",
+      "minimum": "10",
       "verified": "10"
     },
   "scripts": ["ezd6-roll-messages.js"],
