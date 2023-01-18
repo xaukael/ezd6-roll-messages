@@ -99,7 +99,7 @@ Hooks.on('renderChatMessage', (message, html)=>{
   html.find('span.die')
   .mouseover(function(e){
     if ($(this).find('i').hasClass('fa-dice-six') ) return;
-    if ($(this)[0].style.color == 'grey') return;
+    //if ($(this)[0].style.color == 'grey') return;
     if (!!game.user.character?.system?.karma && !$(this).find('i').hasClass('fa-dice-one')) $(this).find('a.karma').show()
     if (!!game.user.character?.system?.herodice) $(this).find('a.herodice').show()
   })
@@ -171,3 +171,158 @@ Hooks.on('renderChatMessage', (message, html)=>{
     await game.user.character.update({system:{herodice:game.user.character.system.herodice-1}});
   });
 })
+
+Hooks.once('ready', async ()=>{
+  let pack = game.packs.get('ezd6-roll-messages.ezd6-macros');
+  let folder = game.folders.find(f=>f.type=="Macro" && f.name=="EZD6")
+  if (!folder) folder = await Folder.create({type:"Macro", name:"EZD6"})
+  let updateNeeded = [];
+  let map = {};
+  if (!pack) return;
+  for (let m of pack.index) {
+    let packMacro = await pack.getDocument(m._id);
+    console.log(m._id, packMacro.flags['ezd6-roll-messages']?.id)
+    let gameMacro = game.macros.find(macro=>macro.flags['ezd6-roll-messages']?.id == packMacro.flags['ezd6-roll-messages']?.id)
+    if (!gameMacro) gameMacro = await Macro.create({...packMacro, ...{folder: folder.id, ownership:{default: CONST.DOCUMENT_PERMISSION_LEVELS.OBSERVER}}});
+    map[gameMacro.id] = m._id;
+    if (packMacro.command != gameMacro.command)
+      updateNeeded.push(gameMacro)
+  }
+  if (!updateNeeded.length) return console.log('No EZD6 macro updates detected.');
+  let d = new Dialog({
+    title: 'EZD6 Macros To Update',
+    content: updateNeeded.reduce((a,m)=>a+=`<div><h3>${m.name}<a class="update" style="float:right;" data-macro-id="${m.id}" data-pack-id="${map[m.id]}">Update</a></h3></div>`, ``),
+    buttons:{
+      updateAll:{ label: 'Update All', callback: async (html)=>{
+        for (let m of updateNeeded) {
+          let packMacro = await pack.getDocument(map[m.id]);
+          await m.update({command: packMacro.command});
+        }
+      }},
+      cancel: { label: 'Cancel', callback:(html)=>{
+        d.close();
+      }}
+    },
+    render: (html)=>{
+      html.find('a.update').click(async function(){
+        let packMacro = await pack.getDocument(this.dataset.packId);
+        await game.macros.get(this.dataset.macroId).update({command: packMacro.command})
+        $(this).text('Updated').off('click');
+      })
+    },
+    close: ()=>{return}
+  }).render(true)
+})
+
+ezd6.rollDialog = async function(title) {
+  let pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
+  let position = {top: window.innerHeight-300};
+  let formula = await Dialog.wait({
+         title,
+         content:  `
+         <center style="margin-bottom: .5em;">
+         <div class="dice"></div>
+          <button style="width: 80px" name="bane">Bane</button>
+          <input style="width: 30px; display: none;" type="number" value="0" id="boon-bane"></input>
+          <input style="width: 100px; height: 32px; " type="text" value="1d6" name="formula"></input>
+          <button style="width: 80px" name="boon">Boon</button>
+          </center>
+         `,
+         render: (html) => {
+           html.find('.dice').html([...Array(Math.abs(+html.find('#boon-bane').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i+1]}"></i>`, ""));
+           html.find('.fa-solid').css('color', 'white')
+            html.find(`button[name="boon"]`).click(function(){
+              if (+html.find('#boon-bane').val()==5) return;
+              html.find('#boon-bane').val(+html.find('#boon-bane').val()+1);
+              html.find(`input[name="formula"]`).click();
+            });
+            
+            html.find(`button[name="bane"]`).click(function(){
+              if (+html.find('#boon-bane').val()==-5) return;
+              html.find('#boon-bane').val(+html.find('#boon-bane').val()-1);
+              
+              html.find(`input[name="formula"]`).click();
+            });
+            
+            html.find(`input[name="formula"]`).click(function(){
+                      let boonbane = +html.find('#boon-bane').val();
+                      let addDice = Math.abs(boonbane);
+                      let mod = (boonbane>0)?"kh1":"kl1";
+                      let num = 1 + addDice
+                      if (addDice==0) mod = "";
+                      $(this).val(num+"d6"+mod);
+                      html.find('.dice').html([...Array(Math.abs(+html.find('#boon-bane').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i+1]}"></i>`, ""));//
+                      if (+html.find('#boon-bane').val() == 0) return html.find('.fa-solid').css('color: white;')
+                      if (+html.find('#boon-bane').val() > 0) return html.find('.fa-solid').css('color', 'limegreen')
+                      if (+html.find('#boon-bane').val() < 0) return html.find('.fa-solid').css('color', 'red')
+                    });
+         },
+         buttons: {
+             roll : { label : "Roll", callback : (html) => { 
+                      return html.find(`input[name="formula"]`).val();
+                      }
+                  },
+             cancel: { label : "Cancel", callback : (html) => { 
+                      return '';
+                      }
+                  }
+         },
+         default: 'roll',
+         close:   html => {
+             return ''}
+           },position
+        )
+return formula;
+}
+
+ezd6.magickDialog = async function(title) {
+  let pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
+  let position = {top: window.innerHeight-300}
+let formula = await Dialog.wait({
+         title: title,
+         content:  `
+         <center style="margin-bottom: .5em;">
+         <div class="dice"></div>
+          <input style="width: 30px;font-size: 30px; border: none; display: none;" readonly type="number" value="1" id="power-level"></input>
+          <button style="width: 80px" name="minus"><i class="fa-solid fa-minus"></i></button>
+          <input style="width: 100px; height: 32px; " type="text" value="1d6" name="formula"></input>
+          <button style="width: 80px" name="plus"><i class="fa-solid fa-plus"></i></button>
+          </center>
+         `,
+         render: (html) => {
+           html.find('.dice').html([...Array(Math.abs(+html.find('#power-level').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i]}"></i>`, ""));
+            html.find(`button[name="plus"]`).click(function(){
+              html.find('#power-level').val(Math.min(+html.find('#power-level').val()+1, game.user.isGM?6:3));
+              html.find(`input[name="formula"]`).click();
+            });
+            
+            html.find(`button[name="minus"]`).click(function(){
+              html.find('#power-level').val(Math.max(+html.find('#power-level').val()-1, 1));
+              html.find(`input[name="formula"]`).click();
+            });
+            
+            html.find(`input[name="formula"]`).click(function(){
+                      let powerLevel = +html.find('#power-level').val();
+                      if (powerLevel==1) mod = "d6";
+                      else mod = "d6kh";
+                      $(this).val(powerLevel+mod);
+                      html.find('.dice').html([...Array(Math.abs(+html.find('#power-level').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i]}"></i>`, ""));
+                    });
+         },
+         buttons: {
+             roll : { label : `Roll`, callback : (html) => { 
+                      return html.find(`input[name="formula"]`).val();
+                      }
+                  },
+             cancel: { label : "Cancel", callback : (html) => { 
+                      return ''
+                      }
+                  }
+         },
+         default: 'roll',
+         close:   html => {return ''}
+         },position
+        );
+console.log(formula);
+return formula;
+}
