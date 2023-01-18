@@ -62,7 +62,7 @@ Hooks.on('renderChatMessage', (message, html)=>{
     return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color};">${ezd6.d6pips[r.result]}</span>&nbsp;`;
     }, ``) + 
     actions.reduce((a,x)=>a+=`<p>${x}</p>`,``);
-  if (message.flags.ezd6?.targets?.length && game.user.isGM)
+  if (message.flags.ezd6?.targets?.length && (game.user.isGM || game.settings.get('ezd6-roll-messages', 'toHitForPlayers')))
     content = message.flags.ezd6?.targets.reduce((a,x)=>{
       let t = fromUuidSync(x);
       return a+=t?`<div style="display:grid; grid-template-columns: repeat(2, auto)">
@@ -326,3 +326,17 @@ let formula = await Dialog.wait({
 console.log(formula);
 return formula;
 }
+
+Hooks.once("setup", async () => {
+  game.settings.register('ezd6-roll-messages', 'toHitForPlayers', {
+    name: `To Hit For Players`,
+    hint: `Determines whether to display monster to hit value in chat card for Players`,
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: value => { 
+      for (let m of game.messages) ui.chat.updateMessage(m);
+    }
+  });
+});
