@@ -1,0 +1,64 @@
+.chat-message .inline-roll{
+  background: rgba(30, 30, 30, 0.0) ;
+  color: white;
+  border: 1px solid #aaa;
+}
+.chat-message .inline-roll.blindroll{
+  background: rgba(30, 30, 30, 0.0) ;
+  color: white;
+  border: 1px solid red;
+}
+.chat-message .inline-roll.gmroll{
+  background: unset/* rgba(30, 30, 30, 0.0) */;
+  color: white;
+  border: 1px solid blue;
+}
+.chat-message.whisper {
+  background: unset /*#111*/;
+  border: 1px solid blue;
+}
+.chat-message.whisper.blind {
+  background: #111;
+  border: 1px solid red;
+}
+.chat-message {
+  background: #111;
+  color: var(--color-text-light-highlight);
+}
+.flavor-text, .whisper-to {
+  background: unset;
+  color: var(--color-text-light-highlight);
+}
+.message-sender {
+  color: var(--color-text-light-highlight);
+}
+.message-metadata * {
+  color: #999;
+}
+.message-metadata i{
+  color: #DD0000;
+}
+
+.ezd6.sheet.character .window-content, .ezd6.sheet.item .window-content {
+  background-image: unset;
+  background: #111;
+  color: var(--color-text-light-highlight);
+}
+.ezd6.sheet.character .window-content * ,.ezd6.sheet.item .window-content * {
+  
+  color: var(--color-text-light-highlight);
+}
+
+.pm-dropdown, .pm-dropdown * {
+  background: rgba(25,25,25,1)  !important;
+  color: var(--color-text-light-highlight);
+}
+
+.prosemirror menu .pm-dropdown:hover i {
+  color: var(--color-text-light-highlight);
+}
+
+.prosemirror menu  > li > button:hover {
+  background: rgba(25,25,25,1)  !important;
+}
+

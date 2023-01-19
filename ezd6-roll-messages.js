@@ -229,8 +229,10 @@ ezd6.rollDialog = async function(title) {
           </center>
          `,
          render: (html) => {
+          html.parent().css({background:'#111', color: 'white'})
+            html.find('button, input').css({background:'unset', color: 'white'})
            html.find('.dice').html([...Array(Math.abs(+html.find('#boon-bane').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i+1]}"></i>`, ""));
-           html.find('.fa-solid').css('color', 'white')
+           //html.find('.fa-solid').css('color', 'white')
             html.find(`button[name="boon"]`).click(function(){
               if (+html.find('#boon-bane').val()==5) return;
               html.find('#boon-bane').val(+html.find('#boon-bane').val()+1);
@@ -290,6 +292,8 @@ let formula = await Dialog.wait({
           </center>
          `,
          render: (html) => {
+          html.parent().css({background:'#111', color: 'white'})
+            html.find('button, input').css({background:'unset', color: 'white'})
            html.find('.dice').html([...Array(Math.abs(+html.find('#power-level').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i]}"></i>`, ""));
             html.find(`button[name="plus"]`).click(function(){
               html.find('#power-level').val(Math.min(+html.find('#power-level').val()+1, game.user.isGM?6:3));
