@@ -200,7 +200,8 @@ Hooks.on('renderChatMessage', (message, html)=>{
 })
 
 Hooks.on('renderChatLog', (app, html)=>{
-  html.find('.control-buttons').css({display: 'inlin%'});
+  html.find('#chat-controls').removeClass('flexrow')
+  html.find('.control-buttons').css({display: 'inline'});
   html.find('.export-log').appendTo(html.find('.control-buttons'));
   html.find('.export-log, .chat-flush, .scroll-bottom').css({float:'right'});
   html.find('#chat-controls').find('.chat-control-icon').remove();
