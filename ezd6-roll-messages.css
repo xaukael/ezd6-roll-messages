@@ -1,3 +1,4 @@
+/*
 a.entity-link, a.content-link, a.inline-roll, a.inline-chat, .my-inline-roll{
   background: rgba(30, 30, 30, 0.8) ;
   color: white;
@@ -19,12 +20,12 @@ a.entity-link, a.content-link, a.inline-roll, a.inline-chat, .my-inline-roll{
   border: 1px solid red;
 }
 .chat-message .inline-roll.gmroll{
-  background: unset/* rgba(30, 30, 30, 0.0) */;
+  background: unset;
   color: white;
   border: 1px solid blue;
 }
 .chat-message.whisper {
-  background: unset /*#111*/;
+  background: unset ;
   border: 1px solid blue;
 }
 .chat-message.whisper.blind {
@@ -71,4 +72,4 @@ a.entity-link, a.content-link, a.inline-roll, a.inline-chat, .my-inline-roll{
 .prosemirror menu  > li > button:hover {
   background: rgba(25,25,25,1)  !important;
 }
-
+*/

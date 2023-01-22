@@ -1,8 +1,8 @@
 var ezd6 = {};
-ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}"></i>`:`<i class="fa-solid fa-square"></i>`);
-ezd6.herodice = `<i class="fa-solid fa-square" style="color:limegreen;background:unset;border:unset;"></i>`;
-ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset;"></i>`;
-ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset;"></i>';
+ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}" style=" -webkit-text-stroke: 1px black;"></i>`:`<i class="fa-solid fa-square" style=" -webkit-text-stroke: 1px black;"></i>`);
+ezd6.herodice = `<i class="fa-solid fa-square" style="color:limegreen;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
+ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
+ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
 
 ezd6.updateChatMessage = async function(id, update) {
   return await game.messages.get(id).update(update);
@@ -58,7 +58,7 @@ Hooks.on('renderChatMessage', (message, html)=>{
     if (r.hasOwnProperty('success') && !r.success) color ="grey";
     if (r.hasOwnProperty('discarded') && r.discarded) color ="grey";
     if (!r.active) color = "grey";
-    if (message.flavor.includes('Spell') && r.result == 1) color = "red";
+    if (message.flavor.includes('Cast') && r.result == 1) color = "red";
     return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color};">${ezd6.d6pips[r.result]}</span>&nbsp;`;
     }, ``) + 
     actions.reduce((a,x)=>a+=`<p>${x}</p>`,``);
@@ -74,38 +74,12 @@ Hooks.on('renderChatMessage', (message, html)=>{
   html.find('img.target').mouseover(function(e){
     let tok = canvas.tokens?.get($(this).data().id);
     let $div = $(`<div id="${tok.id}-marker" class="token-marker ${tok.id}" style="position: absolute; top: ${tok.y}px; left: ${tok.x}px; display:block;" data-tokenid="${tok.id}">
-      <style>
-      .token-marker {
-        width: ${tok.w}px;
-        height: ${tok.h}px;
-        border: 3px solid red;
-        border-radius: 8px;
-      }
-      </style></div>`);
+      <style>.token-marker {width: ${tok.w}px; height: ${tok.h}px; border: 3px solid red; border-radius: 8px;}</style></div>`);
       $('#hud').append($div);
   }).mouseout(function(e) {
     $('#hud').find('div.token-marker').remove();
   });
-  
-  if (!message.flavor.toUpperCase().includes('SPELL'))
-    html.find('span.die').append(`<a class="karma" style="position:absolute;left:0px;" hidden="true">${ezd6.karma}</a>`)
-  html.find('span.die').append(`<a class="herodice" style="position:absolute;right:0px;" hidden="true">${ezd6.herodice}</a>`)
-  html.find('span.die *').css({background: 'unset'})
-  html.find('span.die > a').css({fontSize: '12px', bottom: '-5px'})
-  
-  if (game.user==message.user || 
-  game.user.character.items.filter(i=>i.name=='Inspiring').length ||
-  (message.user.isGM && game.users.contents.flatMap(u=>u.character?.items.getName('Skald')).filter(i=>!!i).length))
-  html.find('span.die')
-  .mouseover(function(e){
-    if ($(this).find('i').hasClass('fa-dice-six') ) return;
-    //if ($(this)[0].style.color == 'grey') return;
-    if (!!game.user.character?.system?.karma && !$(this).find('i').hasClass('fa-dice-one')) $(this).find('a.karma').show()
-    if (!!game.user.character?.system?.herodice) $(this).find('a.herodice').show()
-  })
-  .mouseout(function(e) {
-      html.find('a.karma, a.herodice').hide()
-  })
+
   if (game.user.isGM)
   html.find('span.die').click(async function(e){
     e.stopPropagation();
@@ -130,6 +104,28 @@ Hooks.on('renderChatMessage', (message, html)=>{
     return message.update({flags:{ezd6:{results, actions}}})
     //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
   }).contextmenu(function(){$(this).click()})
+
+  /*
+  if (!message.flavor.includes('Cast'))
+    html.find('span.die').append(`<a class="karma" style="position:absolute;left:0px;" hidden="true">${ezd6.karma}</a>`)
+  html.find('span.die').append(`<a class="herodice" style="position:absolute;right:0px;" hidden="true">${ezd6.herodice}</a>`)
+  html.find('span.die *').css({background: 'unset'})
+  html.find('span.die > a').css({fontSize: '12px', bottom: '-5px'})
+  
+  if (game.user==message.user || 
+  game.user.character.items.filter(i=>i.name=='Inspiring').length ||
+  (message.user.isGM && game.users.contents.flatMap(u=>u.character?.items.getName('Skald')).filter(i=>!!i).length))
+  html.find('span.die')
+  .mouseover(function(e){
+    if ($(this).find('i').hasClass('fa-dice-six') ) return;
+    //if ($(this)[0].style.color == 'grey') return;
+    if (!!game.user.character?.system?.karma && !$(this).find('i').hasClass('fa-dice-one')) $(this).find('a.karma').show()
+    if (!!game.user.character?.system?.herodice) $(this).find('a.herodice').show()
+  })
+  .mouseout(function(e) {
+      html.find('a.karma, a.herodice').hide()
+  })
+  
   
   html.find('a.karma').click(async function(e){
     e.stopPropagation();
@@ -144,7 +140,8 @@ Hooks.on('renderChatMessage', (message, html)=>{
     if (results[index].discarded) return ui.notifications.warn(`You cannot use Karma on discarded rolls. Why would you?`);
     if (roll == 6) return ui.notifications.warn("Cannot use Karma on a roll of 6. Why would you?");
     results[index].result = roll + ((!game.user.isGM && message.user.isGM)?-1:1);
-    if (results[index].hasOwnProperty('success') && results[index].result==6) results[index].success = true;
+    if (results[index].hasOwnProperty('success') && results[index].result >= save) results[index].success = true;
+    if (results[index].hasOwnProperty('success') && results[index].result <  save) results[index].success = false;
     actions.push(`${game.user.character?.name || game.user.name} used a Karma on die ${index+1} - ${ezd6.karma}`);
     //await message.update({flags:{ezd6:{results, actions}}});
     await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
@@ -156,21 +153,102 @@ Hooks.on('renderChatMessage', (message, html)=>{
     if (game.user.flags.ezd6.hd == 0) return ui.notifications.warn("You have no Hero Dice left.");
     let results = [...message.flags.ezd6?.results];
     let actions = [];
+    let save = Number(message.rolls[0].formula.split('>=')[1])
     if (message.flags.ezd6?.actions) actions = message.flags.ezd6?.actions;
     let index = +$(this).parent().data().index;
     let roll = +$(this).parent().data().roll;
     if (roll == 6) return ui.notifications.warn("Why would you try to use a Hero Die to reroll a 6?");
-    if (results[index].discarded) return ui.notifications.warn(`You cannot use a Hero Die on a discarded roll. Why would you?`);
+    if (results[index].discarded && !message.flavor.includes('Cast')) return ui.notifications.warn(`You cannot use a Hero Die on a discarded roll. Why would you?`);
     let hd = await new Roll('1d6').roll();
     if (game.modules.get('dice-so-nice')?.active) await game.dice3d.showForRoll(hd, game.user, true);
     results[index].result = hd.total;
     actions.push(`${game.user.character?.name || game.user.name} used a Hero Die on die ${index+1} - ${ezd6.herodice}</i>`);
-    if (results[index].hasOwnProperty('success') && results[index].result==6) results[index].success = true;
+    if (results[index].hasOwnProperty('success') && results[index].result >= save) results[index].success = true;
+    if (results[index].hasOwnProperty('success') && results[index].result <  save) results[index].success = false;
     //await message.update({flags:{ezd6:{results, actions}}})
     await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
     await game.user.character.update({system:{herodice:game.user.character.system.herodice-1}});
   });
+
+  */
 })
+
+Hooks.on('getChatLogEntryContext', (html, options)=>{
+  
+  options.unshift({
+    name: "Use Karma",
+    icon: ezd6.karma,
+    condition: li => {
+      const message = game.messages.get(li.data("messageId"));
+      return message.user.id == game.user.id && game.user.character.system.karma > 0 && !message.flavor.includes('Cast');
+    },
+    callback: li => {
+      const message = game.messages.get(li.data("messageId"));
+      return ezd6.useKarma(message);
+    }
+  });
+  options.unshift({
+    name: "Use Hero Die",
+    icon: ezd6.herodice,
+    condition: li => {
+      const message = game.messages.get(li.data("messageId"));
+      return message.user.id == game.user.id && game.user.character.system.herodice > 0 ;
+    },
+    callback: li => {
+      const message = game.messages.get(li.data("messageId"));
+      return ezd6.useHeroDie(message)
+    }
+  });
+});
+
+ezd6.useKarma = async function(message) {
+  //let message = game.messages.contents.reverse().filter(m=>m.user==game.user && m.flags.ezd6?.results)[0];
+  let character = game.user.character;
+  if (!character) return ui.notifications.warn("No Character Assigned");
+  if (character.system.karma == 0 ) return ui.notifications.warn("You do not have Karma to use.");
+  let actions = [];
+  if (message.flags.ezd6?.actions) actions = message.flags.ezd6?.actions;
+  if (message.flavor.includes('Cast')) return ui.notifications.notify('You cannot use Karma on cast rolls.')
+  let results = [...message.flags.ezd6?.results];
+  let index = results.findLastIndex(r=>r.active)
+  let result = results[index];
+  let roll = result.result;
+  if (roll == 1) return ui.notifications.warn("Cannot use Karma on a roll of 1.");
+  if (roll == 6) return ui.notifications.warn("You do not need to use Karma. You rolled of 6.");
+  results[index].result = roll + 1;
+  let save = Number(message.rolls[0].formula.split('>=')[1]);
+  if (results[index].hasOwnProperty('success') && (results[index].result == 6 || results[index].result >= save)) results[index].success = true;
+  if (results[index].hasOwnProperty('success') && results[index].result < save) results[index].success = false;
+  actions.push(`${character?.name || game.user.name} used a Karma on die ${index+1} - ${ezd6.karma}`);
+  await game.user.character.update({system:{karma:character.system.karma-1}});
+  return await message.update({flags:{ezd6:{results, actions}}});
+  await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
+}
+
+ezd6.useHeroDie = async function(message) {
+  //let message = game.messages.contents.reverse().filter(m=>m.user==game.user && m.flags.ezd6?.results)[0];
+  let character = game.user.character;
+  if (!character) return ui.notifications.warn("No Character Assigned");
+  if (character.system.herodice == 0 ) return ui.notifications.warn("You do not have a Hero Die to use.");
+  let actions = [];
+  if (message.flags.ezd6?.actions) actions = message.flags.ezd6?.actions;
+  let results = [...message.flags.ezd6?.results];
+  let index = results.findLastIndex(r=>r.active)
+  if (message.flavor.includes('Cast') && results.find(r=>r.result == 1)) index = results.findIndex(r=>r.result == 1)
+  let result = results[index];
+  let roll = result.result;
+  if (roll == 6) return ui.notifications.warn("You do not need to use a Hero Die. You rolled of 6.");
+  let hd = await new Roll('1d6').roll();
+  if (game.modules.get('dice-so-nice')?.active) await game.dice3d.showForRoll(hd, game.user, true);
+  results[index].result = hd.total;
+  let save = Number(message.rolls[0].formula.split('>=')[1]);
+  if (results[index].hasOwnProperty('success') && (results[index].result == 6 || results[index].result >= save)) results[index].success = true;
+  if (results[index].hasOwnProperty('success') && results[index].result <  save) results[index].success = false;
+  actions.push(`${game.user.character?.name || game.user.name} used a Hero Die on die ${index+1} - ${ezd6.herodice}</i>`);
+  await game.user.character.update({system:{herodice:character.system.herodice-1}});
+  return await message.update({flags:{ezd6:{results, actions}}});
+  await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
+}
 
 Hooks.once('ready', async ()=>{
   let pack = game.packs.get('ezd6-roll-messages.ezd6-macros');
