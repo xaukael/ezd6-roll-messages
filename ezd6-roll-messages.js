@@ -80,7 +80,7 @@ Hooks.on('renderChatMessage', (message, html)=>{
       </div>`:``; 
     },`<div style="display: flex; flex-wrap: wrap">`) + `</div>`  + content;
 
-  if (message.flavor.toUpperCase().includes('ATTACK') && message.isOwner) {
+  if (message.flavor.toUpperCase().includes('ATTACK') && message.isAuthor) {
     let resultsActive6 = message.flags.ezd6?.results?.filter(r=>r.result>=(brutal?5:6) && r.active);
     let resultsOriginalCrit = !!resultsActive6.filter(r=>!r.hasOwnProperty('count') && r.active).length;
     if (!!resultsActive6?.filter(r=>!r.hasOwnProperty('count') && r.active)?.length && resultsOriginalCrit) {
@@ -200,14 +200,13 @@ Hooks.on('renderChatMessage', (message, html)=>{
 })
 
 Hooks.on('renderChatLog', (app, html)=>{
-  html.find(`div.control-buttons`).css('flex', '0 0 auto')
-  html.find('.control-buttons').css({width: '100%'});
+  html.find('.control-buttons').css({display: 'inlin%'});
   html.find('.export-log').appendTo(html.find('.control-buttons'));
   html.find('.export-log, .chat-flush, .scroll-bottom').css({float:'right'});
   html.find('#chat-controls').find('.chat-control-icon').remove();
   //.find('i').removeClass('fa-dice-d20').addClass('fa-dice')
 
-  html.find('.control-buttons').append($(`<a class="flavor" style="margin:.1em; float:right;"><i class="fas fa-eye"></i></a>`).click(async function(e){
+  html.find('#chat-controls').append($(`<a class="flavor" style="margin:.1em; float:right;"><i class="fas fa-eye"></i></a>`).click(async function(e){
     
     let buttons = {};
     for (let [key, value] of Object.entries(CONST.DICE_ROLL_MODES)) 
@@ -220,7 +219,7 @@ Hooks.on('renderChatLog', (app, html)=>{
       html.find(`button.${rollMode}`).css({'box-shadow':'inset 1px 1px 10px #f00'})
     }, close:()=>{return ''}}, {width: 50, left:window.innerWidth, top: window.innerHeight});
   }));
-  html.find('.control-buttons').prepend($(`<a class="flavor" style="margin:.1em;"><i class="fas fa-hashtag"></i></a>`).click(async function(e){
+  html.find('#chat-controls').prepend($(`<a class="flavor" style="margin:.1em;"><i class="fas fa-hashtag"></i></a>`).click(async function(e){
     let flavors = ['Attack', 'Cast', 'Task', 'Armor Save', 'Miraculous Save', 'Resistance'];
     if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('WARRIOR')).length) flavors.splice(1, 0, 'Brutal Attack');
     if (game.user.isGM) flavors.push('Aloofness');
@@ -238,7 +237,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.push(flavor)
     textarea.val(splitMessage.join(' # '));
   }))
-  html.find('.control-buttons').prepend($(`<a class="bane" style="width:auto; margin:.1em; font-size: 20px;"><b>Bane</b></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="bane" style="width:auto; margin:.1em; font-size: 20px;"><b>Bane</b></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -247,7 +246,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '))
   }))
-  html.find('.control-buttons').prepend($(`<a class="boon" style="width:auto; margin:.1em; font-size: 20px;"><b>Boon</b></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="boon" style="width:auto; margin:.1em; font-size: 20px;"><b>Boon</b></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -256,7 +255,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '));
   }))
-  html.find('.control-buttons').prepend($(`<a class="sub" style="margin:.1em;"><i class="fas fa-square-minus"></i></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="sub" style="margin:.1em;"><i class="fas fa-square-minus"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -266,7 +265,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '))
   }))
-  html.find('.control-buttons').prepend($(`<a class="add" style="margin:.1em;"><i class="fas fa-square-plus"></i></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="add" style="margin:.1em;"><i class="fas fa-square-plus"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -276,7 +275,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '));
   }))
-  html.find('.control-buttons').prepend($(`<a class="dice" style="width:auto; margin:.2em"><i class="fas fa-dice"></i></a>`))
+  html.find('#chat-controls').prepend($(`<a class="dice" style="width:auto; margin:.2em"><i class="fas fa-dice"></i></a>`))
   //for (let i=6; i>0; i--) html.find('.control-buttons').prepend($(`<a class=><i class="fas fa-${i}"></i></a>`))
   
   html.find('#chat-form > a').remove();
@@ -334,7 +333,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     formula = Roll.fromTerms(terms).formula
     html.find('#chat-message').val(`/r ${formula}`);
   })
-  html.find(`div.control-buttons > a`).css('margin', '.1em')
+  //html.find(`#chat-controls > a`).css('margin', '.1em')
 })
 
 Hooks.on('getChatLogEntryContext', (html, options)=>{
@@ -578,7 +577,7 @@ Hooks.once('ready', async ()=>{
   if (!pack) return;
   for (let m of pack.index) {
     let packMacro = await pack.getDocument(m._id);
-    console.log(m._id, packMacro.flags['ezd6-roll-messages']?.id)
+    //console.log(m._id, packMacro.flags['ezd6-roll-messages']?.id)
     let gameMacro = game.macros.find(macro=>macro.flags['ezd6-roll-messages']?.id == packMacro.flags['ezd6-roll-messages']?.id)
     if (!gameMacro) gameMacro = await Macro.create({...packMacro, ...{folder: folder.id, ownership:{default: CONST.DOCUMENT_PERMISSION_LEVELS.OBSERVER}}});
     map[gameMacro.id] = m._id;
