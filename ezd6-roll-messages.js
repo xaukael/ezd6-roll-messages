@@ -67,7 +67,7 @@ Hooks.on('renderChatMessage', (message, html)=>{
     if (message.flavor.toUpperCase().includes('ATTACK') && r.result >= (brutal?5:6) && !r.discarded) color = "limegreen";
     if (r.hasOwnProperty('active') && !r.active) color = "grey";
     if (message.flavor.toUpperCase().includes('CAST') && r.result == 1) color = "red";
-    return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color};">${ezd6.d6pips[r.result]}</span>&nbsp;`;
+    return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color};">${(message.whisper.includes(game.user.id) || !message.whisper.length)?ezd6.d6pips[r.result]:ezd6.d6pips[0]}</span>&nbsp;`;
     }, ``) + 
     actions.reduce((a,x)=>a+=`<p>${x}</p>`,``);
   if (message.flags.ezd6?.targets?.length && (game.user.isGM || game.settings.get('ezd6-roll-messages', 'toHitForPlayers')))
