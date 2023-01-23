@@ -404,7 +404,6 @@ ezd6.renderPlayerDialog = function() {
       }
   }, {width: 'auto', height: 'auto', id}
   ).render(true);
-  character.apps[d.appId] = d;
   
   
   if (Hooks.ezd6playerui) Hooks.off('', Hooks.ezd6playerui)
