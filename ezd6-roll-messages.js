@@ -3,7 +3,7 @@ ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>
 ezd6.herodice = `<i class="fa-solid fa-square" style="color:limegreen;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
-
+/*
 ezd6.updateChatMessage = async function(id, update) {
   return await game.messages.get(id).update(update);
 }
@@ -12,7 +12,7 @@ Hooks.once("socketlib.ready", () => {
 	ezd6.socket = socketlib.registerModule("ezd6-roll-messages");
 	ezd6.socket.register("updateChatMessage", ezd6.updateChatMessage);
 });
-
+*/
 Hooks.on('renderEZD6CharacterSheet', (app, html)=>{
   let actor = app.object;
   if (actor.type != 'character') return;
@@ -60,7 +60,6 @@ Hooks.on('renderChatMessage', (message, html)=>{
       for (let r of results) 
         delete r.active;
   }
-  console.log(message.id, results)
   let content = results.reduce((acc, r, i)=> {
     let color = 'inherit';
     if (r.hasOwnProperty('success') && !r.success) color ="grey";
@@ -238,7 +237,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.push(flavor)
     textarea.val(splitMessage.join(' # '));
   }))
-  html.find('#chat-controls').prepend($(`<a class="bane" style="width:auto; margin:.1em; font-size: 20px;"><b>Bane</b></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="bane" style="width:auto; margin:.1em; font-size: 20px;"><i class="fas fa-k"></i><i class="fas fa-l"></i><i class="fas fa-1"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -247,7 +246,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '))
   }))
-  html.find('#chat-controls').prepend($(`<a class="boon" style="width:auto; margin:.1em; font-size: 20px;"><b>Boon</b></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="boon" style="width:auto; margin:.1em; font-size: 20px;"><i class="fas fa-k"></i><i class="fas fa-h"></i><i class="fas fa-1"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -268,6 +267,7 @@ Hooks.on('renderChatLog', (app, html)=>{
   }))
   html.find('#chat-controls').prepend($(`<a class="add" style="margin:.1em;"><i class="fas fa-square-plus"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
+    if (splitMessage.length == 1) return $(this).prev().click();
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
     if (!roll.terms[0].modifiers.length) roll.terms[0].modifiers=['kh1'];
@@ -541,7 +541,7 @@ ezd6.useKarma = async function(message) {
   actions.push(`${character?.name || game.user.name} used a Karma on die ${index+1} - ${ezd6.karma}`);
   await game.user.character.update({system:{karma:character.system.karma-1}});
   return await message.update({flags:{ezd6:{results, actions}}});
-  await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
+  //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
 }
 
 ezd6.useHeroDie = async function(message) {
@@ -566,7 +566,7 @@ ezd6.useHeroDie = async function(message) {
   actions.push(`${game.user.character?.name || game.user.name} used a Hero Die on die ${index+1} - ${ezd6.herodice}</i>`);
   await game.user.character.update({system:{herodice:character.system.herodice-1}});
   return await message.update({flags:{ezd6:{results, actions}}});
-  await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
+  //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
 }
 
 Hooks.once('ready', async ()=>{
