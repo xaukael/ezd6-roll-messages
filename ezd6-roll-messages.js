@@ -39,11 +39,12 @@ Hooks.on('preCreateChatMessage', async (message)=>{
 Hooks.on('renderChatMessage', (message, html)=>{
   if (message.flavor.includes("Draws a result")) return;
   if (!message.rolls?.length) return;
+  if (message.whisper.length && !message.whisper.includes(game.user.id)) return;
   if (message.rolls[0].dice.filter(d=>d.faces==6).length!=message.rolls[0].dice.length) return; 
   html.find('.message-sender').css({color: message.user.color, fontWeight: 'bold'})
   let flavor = html.find('.flavor-text').text().trim();
   if (flavor) html.find('.flavor-text').html(`<h3 draggable="true">${message.rolls[0].formula} # ${flavor.capitalize()}</h3>`)
-
+  
   if (!message.flags.ezd6?.results) return;
   //console.log(message.flags.ezd6.results);
   let results = [...message.flags.ezd6.results];
