@@ -230,10 +230,16 @@ Hooks.on('renderChatLog', (app, html)=>{
     let flavor = await Dialog.wait({title: 'Roll Flavor', buttons, render:(html)=>{$(html[2]).css({'flex-direction':'column'})}, close:()=>{return ''}},{width: 80, left:window.innerWidth, top: window.innerHeight})
     let textarea = html.find('#chat-message');
     let splitMessage = textarea.val().split(' # ')
+    if (!splitMessage[0]) return console.log(splitMessage);
+    let rollPart = splitMessage[0].split(' ');
+    let roll = new Roll(rollPart[1]);
+    roll.terms[0].modifiers.findSplice(i=>i.toUpperCase().includes('CS'))
     if (flavor.toUpperCase().includes('SAVE')) {
-      if (flavor.toUpperCase().includes('MIRACULOUS')) splitMessage[1]+='cs>=@miraculoussave'
-      if (flavor.toUpperCase().includes('ARMOR')) splitMessage[1]+='cs>=@armorsave';
+      if (flavor.toUpperCase().includes('MIRACULOUS')) roll.terms[0].modifiers.push('cs>=@miraculoussave')
+      if (flavor.toUpperCase().includes('ARMOR')) roll.terms[0].modifiers.push('cs>=@armorsave');
     }
+    rollPart.findSplice(i=>i.toUpperCase().includes('D6'), roll.formula)
+    splitMessage.splice(0,1,rollPart.join(' '))
     if (splitMessage.length > 1) splitMessage.pop();
     splitMessage.push(flavor)
     textarea.val(splitMessage.join(' # '));
@@ -243,7 +249,8 @@ Hooks.on('renderChatLog', (app, html)=>{
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
     if (!roll) return;
-    roll.terms[0].modifiers=['kl1'];
+    roll.terms[0].modifiers.findSplice(i=>i.toUpperCase().includes('K'), "kl1")
+    //roll.terms[0].modifiers=['KL1'];
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '))
   }))
@@ -252,7 +259,8 @@ Hooks.on('renderChatLog', (app, html)=>{
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
     if (!roll) return;
-    roll.terms[0].modifiers=['kh1'];
+    roll.terms[0].modifiers.findSplice(i=>i.toUpperCase().includes('K'), "kh1")
+    //roll.terms[0].modifiers=['KH1'];
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '));
   }))
