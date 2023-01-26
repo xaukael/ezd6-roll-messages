@@ -3,6 +3,43 @@ ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>
 ezd6.herodice = `<i class="fa-solid fa-square" style="color:limegreen;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
+ezd6.texts = {  strikes: { value: "Strike" }, karma: "Karma", herodice: "Hero Die"  };
+
+
+
+Hooks.on('preUpdateActor', (actor, update, context)=>{
+  if (!update.data) return;
+  for (let [key, value] of Object.entries(foundry.utils.flattenObject(update.data)))
+    if (Object.keys(foundry.utils.flattenObject(ezd6.texts)).includes(key)) {
+      let dif = value - foundry.utils.getProperty(actor.system, key);
+      foundry.utils.setProperty(context, key, dif);
+      let up = foundry.utils.getProperty(foundry.utils.expandObject(context), key) > 0;
+      ChatMessage.create({content:`${actor.name} ${(up ?'+':'')}${dif} ${foundry.utils.getProperty(ezd6.texts, key)} ${foundry.utils.getProperty(ezd6, key.split('.')[0])}`})
+    } 
+});
+
+Hooks.on('updateActor', (actor, update , context)=>{
+  if (!update.data) return;
+  for (let [key, value] of Object.entries(foundry.utils.flattenObject(update.data)))
+    if (Object.keys(foundry.utils.flattenObject(ezd6.texts)).includes(key)) {
+      let up = foundry.utils.getProperty(foundry.utils.expandObject(context), key) > 0;
+      let tokens = actor.getActiveTokens();
+      let text = foundry.utils.getProperty(ezd6.texts, key);
+      //ChatMessage.create({content: `${down?'takes':'gives'} a ${this.dataset.label} ${down?'from':'to'} ${character.name} - ${columns.find(e=>e.key==this.dataset.key).icon}`})
+      text = (up ?'+':'') + foundry.utils.getProperty(foundry.utils.expandObject(context), key) + " " + text ;
+      for (let t of tokens)
+        canvas.interface.createScrollingText(t.center, text, {
+          anchor: CONST.TEXT_ANCHOR_POINTS.CENTER,
+          direction: up ? CONST.TEXT_ANCHOR_POINTS.TOP : CONST.TEXT_ANCHOR_POINTS.BOTTOM,
+          distance: (2 * t.h),
+          fontSize: 28,
+          stroke: 0x000000,
+          strokeThickness: 4,
+          jitter: 0.25
+        });
+    } 
+});
+
 /*
 ezd6.updateChatMessage = async function(id, update) {
   return await game.messages.get(id).update(update);
@@ -217,7 +254,7 @@ Hooks.on('renderChatLog', (app, html)=>{
       $(html[2]).css({'flex-direction':'column'})
       let rollMode = Object.keys(CONST.DICE_ROLL_MODES).find(key => CONST.DICE_ROLL_MODES[key] === game.settings.get("core", "rollMode"));
       if (rollMode == 'roll') rollMode = 'publicroll';
-      html.find(`button.${rollMode}`).css({'box-shadow':'inset 1px 1px 10px #f00'})
+      html.find(`button.${rollMode}`).css({'box-shadow':'inset 1px 1px 10px #0f0'})
     }, close:()=>{return ''}}, {width: 50, left:window.innerWidth, top: window.innerHeight});
   }));
   html.find('#chat-controls').prepend($(`<a class="flavor" style="margin:.1em;"><i class="fas fa-hashtag"></i></a>`).click(async function(e){
@@ -287,7 +324,6 @@ Hooks.on('renderChatLog', (app, html)=>{
   }))
   html.find('#chat-controls').prepend($(`<a class="dice" style="width:auto; margin:.2em"><i class="fas fa-dice"></i></a>`))
   //for (let i=6; i>0; i--) html.find('.control-buttons').prepend($(`<a class=><i class="fas fa-${i}"></i></a>`))
-  
   html.find('#chat-form > a').remove();
   html.find('select.roll-type-select').hide();
   html.find('#chat-form').css({display:'grid', "grid-template-columns": "9fr 1fr"});
@@ -301,34 +337,10 @@ Hooks.on('renderChatLog', (app, html)=>{
   html.find('.dice').click(async function(e){
     let rm = {BLIND:'br', PUBLIC:'r', PRIVATE:'gmr', SELF:'sr'};
     let rollMode = Object.keys(CONST.DICE_ROLL_MODES).find(key => CONST.DICE_ROLL_MODES[key] === game.settings.get("core", "rollMode"));
+    if (html.find('#chat-message').val().includes('6')) return $(this).next().click();
     html.find('#chat-message').val(`/${rm[rollMode]} 1d6`)
-    /*
-    if (e.shiftKey) {
-      let message = game.messages.filter(m=>m.flags.ezd6?.results && m.user == game.user).reverse()[0];
-      if (!message) return ui.notifications.warn('No roll message found to add to.');
-      let roll = await new Roll('1d6').roll();
-      if (game.modules.get('dice-so-nice')?.active)
-        await game.dice3d.showForRoll(roll, game.user, true);
-      let results = [...message.flags.ezd6.results, ...roll.dice.reduce((a,x)=>{return [...a, ...x.results]}, [])];
-      let actions = [];
-      if (message.flags.ezd6.actions?.length) actions = [...message.flags.ezd6.actions];
-      actions.push(`Rolled die ${results.length} - ${ezd6.d6pips[results[results.length-1].result]}`)
-      return message.update({content:roll.total, flags:{ezd6:{results, actions}}});
-    }
-    let text = html.find('#chat-message').val();
-    let formula = text.split(' ').find(s=>s.includes('d6'))
-    if (!formula) return html.find('#chat-message').val(`/r 1d6`);
-    let terms = Roll.parse(formula)
-    if (e.originalEvent) {
-      terms[0].number++;
-    } else {
-      terms[0].number--;
-    }
-    if (terms[0].number == 0) return html.find('#chat-message').val(``);
-    formula = Roll.fromTerms(terms).formula
-    html.find('#chat-message').val(`/r ${formula}`);*/
   })
-  .contextmenu(function(){$(this).click()})
+  .contextmenu(function(){if (html.find('#chat-message').val().includes('6')) return $(this).next().next().click();})
   .on('wheel', function(e){
     let text = html.find('#chat-message').val();
     let formula = text.split(' ').find(s=>s.includes('d6'))
@@ -343,7 +355,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     formula = Roll.fromTerms(terms).formula
     html.find('#chat-message').val(`/r ${formula}`);
   })
-  //html.find(`#chat-controls > a`).css('margin', '.1em')
+  html.find(`#chat-controls > a, .control-buttons > a`).css('margin', '.18em')
 })
 
 Hooks.on('getChatLogEntryContext', (html, options)=>{
@@ -462,21 +474,7 @@ ezd6.renderRabbleRouserDialog = function() {
     //if (this.dataset.key=="hd" && user.flags.ezd6["hd"]==1 && !e.originalEvent) //
     //return ui.notifications.warn("A player may only have 1 hero die.");
     await character.update({system:{[this.dataset.key]: (e.shiftKey||!!e.originalEvent)?+foundry.utils.getProperty(character.system, this.dataset.key)-1:+foundry.utils.getProperty(character.system, this.dataset.key)+1}});
-    let tokens = character.getActiveTokens();
-    let down = (e.shiftKey||!!e.originalEvent);
-    let text = this.dataset.label.endsWith('s')?this.dataset.label.substring(0, 6).toLowerCase():this.dataset.label.toLowerCase()
-    //ChatMessage.create({content: `${down?'takes':'gives'} a ${this.dataset.label} ${down?'from':'to'} ${character.name} - ${columns.find(e=>e.key==this.dataset.key).icon}`})
-    text = (down?'- ':'+ ') + text ;
-    for (let t of tokens)
-    canvas.interface.createScrollingText(t.center, text, {
-          anchor: CONST.TEXT_ANCHOR_POINTS.CENTER,
-          direction: down ? CONST.TEXT_ANCHOR_POINTS.BOTTOM: CONST.TEXT_ANCHOR_POINTS.TOP,
-          distance: (2 * t.h),
-          fontSize: 28,
-          stroke: 0x000000,
-          strokeThickness: 4,
-          jitter: 0.25
-        });
+    
     //ChatMessage.create({content : `${character.name} ${(e.shiftKey||!!e.originalEvent)?"loses":"gains"} a ${this.dataset.label.endsWith('s')?this.dataset.label.substring(0, 6).toLowerCase():this.dataset.label.toLowerCase()}`})
   }).contextmenu(async function(e){ $(this).click(); })
   html.first().append($div);
