@@ -21,9 +21,14 @@
   background: #111;
   border: 1px solid red;
 }
-.chat-message , textarea#chat-message{
+.chat-message {
   background: #111;
   color: var(--color-text-light-highlight);
+}
+textarea#chat-message {
+  background: #111;
+  color: var(--color-text-light-highlight);
+  border: 1px solid white;
 }
 .flavor-text, .whisper-to {
   background: unset;
