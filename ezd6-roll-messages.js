@@ -1,11 +1,22 @@
 var ezd6 = {};
 ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}" style=" -webkit-text-stroke: 1px black;"></i>`:`<i class="fa-solid fa-square" style=" -webkit-text-stroke: 1px black;"></i>`);
-ezd6.herodice = `<i class="fa-solid fa-square" style="color:limegreen;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
+ezd6.herodice = `<i class="fa-solid fa-square" style="color:#aef601;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
 ezd6.texts = {  strikes: { value: "Strike" }, karma: "Karma", herodice: "Hero Die"  };
 
-
+Hooks.on('setup', ()=>{
+  if (game.system.id != "ezd6") return;
+  document.documentElement.style.setProperty('--color-text-hyperlink',       '#A7F700');
+  document.documentElement.style.setProperty('--color-shadow-primary',       '#A7F700');
+  document.documentElement.style.setProperty('--color-shadow-highlight',     '#A7F700');
+  document.documentElement.style.setProperty('--color-underline-active',     '#194419');
+  document.documentElement.style.setProperty('--color-underline-header',     '#577F00');
+  document.documentElement.style.setProperty('--color-border-highlight',     '#A7F700');
+  document.documentElement.style.setProperty('--color-border-highlight-alt', '#A7F700');
+  $('head').append($(`<style>::-webkit-scrollbar-thumb{background: var(--color-underline-header) !important;}</style>`));
+  $('#logo').attr('src', 'modules/ezd6-roll-messages/ezd6-logo.png').removeAttr('height').css({height:'auto', width:'65px', margin: '10px 25px'});
+});
 
 Hooks.on('preUpdateActor', (actor, update, context)=>{
   if (!update.data) return;
@@ -39,7 +50,6 @@ Hooks.on('updateActor', (actor, update , context)=>{
         });
     } 
 });
-
 /*
 ezd6.updateChatMessage = async function(id, update) {
   return await game.messages.get(id).update(update);
@@ -55,7 +65,7 @@ Hooks.on('renderEZD6CharacterSheet', (app, html)=>{
   if (actor.type != 'character') return;
   let columns = [ 
   ["strikes.value",'<i class="fa-solid fa-heart"  style="color:red;" title="Strike"></i>', "Strikes"], 
-  ["herodice", '<i class="fa-solid fa-square" style="color:limegreen;" title="Hero Die"></i>' , "Hero Die"],
+  ["herodice", '<i class="fa-solid fa-square" style="color:#aef601;" title="Hero Die"></i>' , "Hero Die"],
   ["karma", '<i class="fa-solid fa-circle" style="color:gold;" title="Karma"></i>', "Karma"]
   ];
   let stats = 
@@ -102,7 +112,7 @@ Hooks.on('renderChatMessage', (message, html)=>{
     let color = 'inherit';
     if (r.hasOwnProperty('success') && !r.success) color ="grey";
     if (r.hasOwnProperty('discarded') && r.discarded) color ="grey";
-    if (message.flavor.toUpperCase().includes('ATTACK') && r.result >= (brutal?5:6) && !r.discarded) color = "limegreen";
+    if (message.flavor.toUpperCase().includes('ATTACK') && r.result >= (brutal?5:6) && !r.discarded) color = "#aef601";
     if (r.hasOwnProperty('active') && !r.active) color = "grey";
     if (message.flavor.toUpperCase().includes('CAST') && r.result == 1) color = "red";
     return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color};">${(message.whisper.includes(game.user.id) || !message.whisper.length)?ezd6.d6pips[r.result]:ezd6.d6pips[0]}</span>&nbsp;`;
@@ -658,7 +668,7 @@ ezd6.rollDialog = async function(title) {
                       $(this).val(num+"d6"+mod);
                       html.find('.dice').html([...Array(Math.abs(+html.find('#boon-bane').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i+1]}"></i>`, ""));//
                       if (+html.find('#boon-bane').val() == 0) return html.find('.fa-solid').css('color: white;')
-                      if (+html.find('#boon-bane').val() > 0) return html.find('.fa-solid').css('color', 'limegreen')
+                      if (+html.find('#boon-bane').val() > 0) return html.find('.fa-solid').css('color', '#aef601')
                       if (+html.find('#boon-bane').val() < 0) return html.find('.fa-solid').css('color', 'red')
                     });
          },
@@ -745,5 +755,22 @@ Hooks.once("setup", async () => {
     onChange: value => { 
       for (let m of game.messages) ui.chat.updateMessage(m);
     }
+  });
+});
+
+Hooks.on('diceSoNiceReady', (dice3d) => {
+  dice3d.addSystem({id:"ezd6",name:"⁂ EZD6 (d6, special)"},false);
+
+  dice3d.addDicePreset({
+    type:"d6",
+    labels:[
+      'modules/ezd6-roll-messages/faces/d6-1-ezd6.webp',
+      'modules/ezd6-roll-messages/faces/d6-2-ezd6.webp',
+      'modules/ezd6-roll-messages/faces/d6-3-ezd6.webp',
+      'modules/ezd6-roll-messages/faces/d6-4-ezd6.webp',
+      'modules/ezd6-roll-messages/faces/d6-5-ezd6.webp',
+      'modules/ezd6-roll-messages/faces/d6-6-ezd6.webp'
+    ],
+	system:"ezd6"
   });
 });

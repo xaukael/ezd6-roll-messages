@@ -1,10 +1,40 @@
-/*
-:root {
---color-text-hyperlink:       #55ff00;
---color-shadow-primary:       #00ff04;
---color-shadow-highlight:     #00ff11 ;
---color-underline-active:     #194419;
---color-underline-header:     #22783a;
---color-border-highlight:     #88ff00 ;
---color-border-highlight-alt: #00ff1e;
-}*/
+.chat-message .inline-roll{
+  background: rgba(30, 30, 30, 0.0) ;
+  color: white;
+  border: 1px solid #aaa;
+}
+.chat-message .inline-roll.blindroll{
+  background: rgba(30, 30, 30, 0.0) ;
+  color: white;
+  border: 1px solid red;
+}
+.chat-message .inline-roll.gmroll{
+  background: unset/* rgba(30, 30, 30, 0.0) */;
+  color: white;
+  border: 1px solid blue;
+}
+.chat-message.whisper {
+  background: unset /*#111*/;
+  border: 1px solid blue;
+}
+.chat-message.whisper.blind {
+  background: #111;
+  border: 1px solid red;
+}
+.chat-message , textarea#chat-message{
+  background: #111;
+  color: var(--color-text-light-highlight);
+}
+.flavor-text, .whisper-to {
+  background: unset;
+  color: var(--color-text-light-highlight);
+}
+.message-sender {
+  color: var(--color-text-light-highlight);
+}
+.message-metadata * {
+  color: #999;
+}
+.message-metadata i{
+  color: #DD0000;
+}
