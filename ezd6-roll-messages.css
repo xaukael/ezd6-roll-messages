@@ -1,4 +1,4 @@
-.chat-message .inline-roll{
+.chat-message .inline-roll, .chat-message .content-link{
   background: rgba(30, 30, 30, 0.0) ;
   color: white;
   border: 1px solid #aaa;
