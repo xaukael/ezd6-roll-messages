@@ -77,6 +77,7 @@ Hooks.on('renderEZD6CharacterSheet', (app, html)=>{
 // adds a flag to the hook with results of d6 rolls
 Hooks.on('preCreateChatMessage', async (message)=>{
   if (!message.rolls.length) return true;
+  if (!message.flavor) message.data.update({flavor: " "})
   if (message.flavor.toUpperCase().includes('ATTACK') || message.flavor.toUpperCase().includes('CAST'))
     if (game.user.targets.size) message.data.update({flags:{ezd6:{targets: [...game.user.targets.map(t=>t.document.uuid)]}}});
   message.data.update({flags:{ezd6:{results: message.rolls[0].dice.filter(d=>d.faces==6).reduce((a,x)=>{return [...a, ...x.results]}, [])}}});
@@ -89,9 +90,34 @@ Hooks.on('renderChatMessage', (message, html)=>{
   if (message.whisper.length && !message.whisper.includes(game.user.id)) return;
   if (message.rolls[0].dice.filter(d=>d.faces==6).length!=message.rolls[0].dice.length) return; 
   html.find('.message-sender').css({color: message.user.color, fontWeight: 'bold'})
-  let flavor = html.find('.flavor-text').text().trim();
-  if (flavor) html.find('.flavor-text').html(`<h3 draggable="true">${message.rolls[0].formula} # ${flavor.capitalize()}</h3>`)
-  
+  //let flavor =  message.flavor;//= html.find('.flavor-text').text().trim();
+  //if (flavor) 
+  html.find('.flavor-text').html(`<h3>${message.rolls[0].formula} # <span class="flavor">${message.flavor.capitalize()}</span></h3>`)
+  if (game.user.isGM)
+  html.find('span.flavor').click(function(){
+    $(this).prop('role',"textbox")
+    $(this).prop('contenteditable',"true")
+    $(this).focus()
+  }).focusout(async function(){
+    $(this).find('span').remove();
+    let flavor = $(this).html().trim();
+    await message.update({flavor})
+    $(this).prop('role',"")
+    $(this).prop('contenteditable',"false")
+  }).keydown(function(e){
+    e.stopPropagation();
+    if (e.key != "Enter") return;
+    return $(this).blur();
+  }).focusin(function(){
+    $(this).select();
+    let selection = window.getSelection();
+    let range = document.createRange();
+    range.selectNodeContents(this);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  })
+    
   if (!message.flags.ezd6?.results) return;
   //console.log(message.flags.ezd6.results);
   let results = [...message.flags.ezd6.results];
@@ -255,10 +281,7 @@ Hooks.on('renderChatLog', (app, html)=>{
   //.find('i').removeClass('fa-dice-d20').addClass('fa-dice')
 
   html.find('#chat-controls').append($(`<a class="flavor" style="margin:.1em; float:right;"><i class="fas fa-eye"></i></a>`).click(async function(e){
-    
-    let buttons = {};
-    for (let [key, value] of Object.entries(CONST.DICE_ROLL_MODES)) 
-      buttons[key] = {label: key.toLowerCase().capitalize(), callback: ()=> { return game.settings.set("core", "rollMode", value);}};
+    let buttons = Object.entries(CONST.DICE_ROLL_MODES).reduce((a,[key, value], i)=>{ a[key] = {label: key.toLowerCase().capitalize(), callback: ()=> { return game.settings.set("core", "rollMode", value);}}; return a},{})
     await Dialog.wait({title: 'Roll Mode', buttons, 
     render:(html)=>{
       $(html[2]).css({'flex-direction':'column'})
@@ -271,9 +294,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     let flavors = ['Attack', 'Cast', 'Task', 'Armor Save', 'Miraculous Save', 'Resistance'];
     if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('WARRIOR')).length) flavors.splice(1, 0, 'Brutal Attack');
     if (game.user.isGM) flavors.push('Aloofness');
-    let buttons = {};
-    let options = flavors.map(f=>{return{ label: f, callback: ()=> { return f; }}})
-    for (let o of options) buttons[o.label.slugify()] = o;
+    let buttons = flavors.reduce((a,f,i)=>{ a[f.slugify()] = { label: f, callback: ()=> { return f; }}; return a;}, {});
     let flavor = await Dialog.wait({title: 'Roll Flavor', buttons, render:(html)=>{$(html[2]).css({'flex-direction':'column'})}, close:()=>{return ''}},{width: 80, left:window.innerWidth, top: window.innerHeight})
     let textarea = html.find('#chat-message');
     let splitMessage = textarea.val().split(' # ')
@@ -369,7 +390,26 @@ Hooks.on('renderChatLog', (app, html)=>{
 })
 
 Hooks.on('getChatLogEntryContext', (html, options)=>{
-  
+  options.unshift({
+    name: "Change Flavor",
+    icon: '<i class="fa-solid fa-hashtag"></i>',
+    condition: li => {
+      const message = game.messages.get(li.data("messageId"));
+      return message.user.id == game.user.id || game.user.isGM;
+    },
+    callback: li => {
+      let offset = $(li).offset()
+      const message = game.messages.get(li.data("messageId"));
+      new Dialog({
+        title:'Flavor',
+        content:'<input type="text" style="text-align:center" autofocus></input>',
+        render:(html)=>{ html.find('input').val(message.flavor); },
+        buttons: {confirm: {icon:'<i class="fa-solid fa-check"></i>', callback: (html)=>{ message.update({flavor: html.find('input').val()})}} },
+        default: 'confirm'
+      },{width:200, top: offset.top, left: offset.left-200}).render(true)
+      return;
+    }
+  });
   options.unshift({
     name: "Use Karma",
     icon: ezd6.karma,
@@ -394,6 +434,7 @@ Hooks.on('getChatLogEntryContext', (html, options)=>{
       return ezd6.useHeroDie(message)
     }
   });
+  
 });
 
 ezd6.renderPlayerDialog = function() {
@@ -406,7 +447,7 @@ ezd6.renderPlayerDialog = function() {
     ["herodice",   ezd6.herodice     , "Hero Dice"],
     ["karma",   ezd6.karma, "Karma"]
     ];
-  let d = new Dialog({title: `EZD6 P&S Dialog` ,  content: ``,  buttons: {},  render: async (html)=>{
+  let d = new Dialog({title: `EZD6 Pusher & Shover Dialog` ,  content: ``,  buttons: {},  render: async (html)=>{
   html.first().parent().css({background:'unset'});
   let div = `<div class="${id}" style=""> 
   <style>
@@ -458,7 +499,7 @@ ezd6.renderRabbleRouserDialog = function() {
       {key:"karma", icon: ezd6.karma, label: "Karma"}
     ];
     
-  let d = new Dialog({title: "EZD6 RR Dialog",  content: ``,  buttons: {},  render: async (html)=>{
+  let d = new Dialog({title: "EZD6 Rabble Rouser Dialog",  content: ``,  buttons: {},  render: async (html)=>{
       //position: absolute; top: 30px; left: 0px;
   html.first().parent().css({background:'unset'})//border: 1px solid var(--color-border-dark);border-radius: 5px; background-image: url(../ui/denim075.png); 
   let div = `<div class="${id}"> 
