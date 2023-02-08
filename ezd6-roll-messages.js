@@ -5,6 +5,30 @@ ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;b
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
 ezd6.texts = {  strikes: { value: "Strike" }, karma: "Karma", herodice: "Hero Die"  };
 
+ezd6.system =  {
+	karma:"system.karma",
+	herodice: "system.herodice", 
+	strikes: {
+		value: "system.strikes.value", 
+		max: "system.strikes.max"
+	}, 
+	armorsave:"system.armorsave", 
+	miraculoussave: "system.miraculoussave", 
+	tohit: "system.tohit"
+};
+if (game.system.id != "ezd6")
+ezd6.system = {
+	karma:"flags.ezd6.karma", 
+	herodice: "flags.ezd6.herodice", 
+	strikes: {
+		value: "flags.ezd6.strikes.value", 
+		max: "flags.ezd6.strikes.max"
+	}, 
+	armorsave:"flags.ezd6.armorsave", 
+	miraculoussave: "flags.ezd6.miraculoussave", 
+	tohit: "flags.ezd6.tohit"
+};
+
 Hooks.on('setup', ()=>{
   if (game.system.id != "ezd6") return;
   document.documentElement.style.setProperty('--color-text-hyperlink',       '#A7F700');
