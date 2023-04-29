@@ -5,7 +5,7 @@
   "title": "EZD6 Roll Messages",
   "description": "Roll Message Formatting for EZD6",
   "authors": [{"name":"Xaukael"}],
-  "version": "1.2.2",
+  "version": "1.2.3",
 	"socket": true,
   "system": ["ezd6"],
   "compatibility": {
@@ -17,7 +17,6 @@
   "packs": [{
     "name": "ezd6-macros",
     "label": "EZD6 Macros",
-    "system": "ezd6",
     "path": "ezd6-macros.db",
     "type": "Macro",
     "private": true,
