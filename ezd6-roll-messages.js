@@ -165,7 +165,7 @@ Hooks.on('preUpdateChatMessage', (message, data)=>{
 
 // this does all the formatting for chat messages using Font-Awesome d6 glyphs
 Hooks.on('renderChatMessage', (message, html)=>{
-  console.log('render chat message', message)
+  //console.log('render chat message', message)
   if (message.flavor.includes("Draws a result")) return;
   if (!message.rolls?.length) return;
   if (message.whisper.length && !message.whisper.includes(game.user.id)) return;
