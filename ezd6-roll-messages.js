@@ -311,7 +311,11 @@ Hooks.on('renderChatLog', (app, html)=>{
     if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('WARRIOR')).length) flavors.splice(1, 0, 'Brutal Attack');
     if (game.user.isGM) flavors.push('Aloofness');
     let buttons = flavors.reduce((a,f,i)=>{ a[f.slugify()] = { label: f, callback: ()=> { return f; }}; return a;}, {});
-    let flavor = await Dialog.wait({title: 'Roll Flavor', buttons, render:(html)=>{$(html[2]).css({'flex-direction':'column'})}, close:()=>{return ''}},{width: 80, left:window.innerWidth, top: window.innerHeight})
+    let options = $(this).offset();
+        //options.left -= 190;
+        options.top -= 45;
+        options.width = 80;
+    let flavor = await Dialog.wait({title: 'Roll Flavor', buttons, render:(html)=>{$(html[2]).css({'flex-direction':'column'})}, close:()=>{return ''}},options)
     let textarea = html.find('#chat-message');
     let splitMessage = textarea.val().split(' # ')
     if (!splitMessage[0]) return textarea.val(' # ' + flavor);;
@@ -479,7 +483,7 @@ ezd6.renderPlayerDialog = function() {
   }
   </style><div style="width: max-content; display:grid; grid-template-columns: auto auto auto auto; column-gap: .25em; row-gap: .25em; color: white; font-size: 40px;">`;
   
-  for (let user of game.users.filter(u=>u.character&&u.active&&!u.isGM))
+  for (let user of game.users.filter(u=>u.character&&u.active))
     div += `<span style="margin-right:.25em;">${user.character.name}</span>` + columns.reduce((acc, x, i)=>acc+=`<span style="">${Array(foundry.utils.getProperty(user.character, x[0])+1).join(x[1]+"&nbsp;")}${i==0?Array(Math.max(foundry.utils.getProperty(user.character, ezd6.system.strikes.max)-foundry.utils.getProperty(user.character, ezd6.system.strikes.value)+1, 0)).join('<i class="fa-solid fa-heart" style="color: black;-webkit-text-stroke: 1px red;"></i>&nbsp;'):''}</span>`, ``);
     //<span class="header-stats" style="margin-left:.5em;">
   
