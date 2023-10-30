@@ -1,3 +1,4 @@
+
 .chat-message .inline-roll, .chat-message .content-link{
   background: rgba(30, 30, 30, 0.0) ;
   color: white;
@@ -9,12 +10,11 @@
   border: 1px solid red;
 }
 .chat-message .inline-roll.gmroll{
-  background: unset/* rgba(30, 30, 30, 0.0) */;
   color: white;
   border: 1px solid blue;
 }
 .chat-message.whisper {
-  background: unset /*#111*/;
+  background: unset ;
   border: 1px solid blue;
 }
 .chat-message.whisper.blind {
@@ -22,6 +22,10 @@
   border: 1px solid red;
 }
 .chat-message {
+  background: #111;
+  color: var(--color-text-light-highlight);
+}
+.chat-message button{
   background: #111;
   color: var(--color-text-light-highlight);
 }
@@ -41,5 +45,8 @@ textarea#chat-message {
   color: #999;
 }
 .message-metadata i{
+  color: #555;
+}
+.message-metadata i:hover{
   color: #DD0000;
 }

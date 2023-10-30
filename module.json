@@ -3,25 +3,17 @@
   "id": "ezd6-roll-messages",
   "name": "ezd6-roll-messages",
   "title": "EZD6 Roll Messages",
-  "description": "Roll Message Formatting for EZD6",
+  "description": "Roll Message Formatting and automation for EZD6",
   "authors": [{"name":"Xaukael"}],
-  "version": "1.2.6",
+  "version": "1.2.7",
 	"socket": true,
   "system": ["ezd6"],
   "compatibility": {
       "minimum": "10",
-      "verified": "10"
+      "verified": "11"
     },
   "scripts": ["ezd6-roll-messages.js"],
 	"styles": ["ezd6-roll-messages.css"],
-  "packs": [{
-    "name": "ezd6-macros",
-    "label": "EZD6 Macros",
-    "path": "ezd6-macros.db",
-    "type": "Macro",
-    "private": true,
-    "flags": {}
-  }],
   "relationships": {
   "requires": [    ]
   },

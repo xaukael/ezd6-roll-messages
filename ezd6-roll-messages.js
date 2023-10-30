@@ -1,5 +1,5 @@
 var ezd6 = {};
-ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}" style=" -webkit-text-stroke: 1px black;"></i>`:`<i class="fa-solid fa-square" style=" -webkit-text-stroke: 1px black;"></i>`);
+ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}" style="-webkit-text-stroke: 1px black;"></i>`:`<i class="fa-solid fa-square" style="-webkit-text-stroke: 1px black;"></i>`);
 ezd6.herodice = `<i class="fa-solid fa-square" style="color:#aef601;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
@@ -76,7 +76,7 @@ Hooks.on('setup', ()=>{
   };
 
   //if (game.system.id != "ezd6") return;
-  document.documentElement.style.setProperty('--color-text-hyperlink',       '#A7F700');
+  document.documentElement.style.setProperty('--color-text-hyperlink',    '#A7F700'   );//'#A7F700'
   document.documentElement.style.setProperty('--color-shadow-primary',       '#A7F700');
   document.documentElement.style.setProperty('--color-shadow-highlight',     '#A7F700');
   document.documentElement.style.setProperty('--color-underline-active',     '#194419');
@@ -109,10 +109,11 @@ Hooks.on('preUpdateActor', (actor, update, context)=>{
 });
 
 Hooks.on('updateActor', (actor, update , context)=>{
+  ui.players.render(true)
   for (let [key, value] of Object.entries(foundry.utils.flattenObject(update))) { 
     if (Object.keys(foundry.utils.flattenObject(ezd6.texts)).includes(key)) {
       let up = foundry.utils.getProperty(foundry.utils.expandObject(context), key) > 0;
-      if (!up) continue;
+      //if (!up) continue;
       let tokens = actor.getActiveTokens();
       let text = foundry.utils.getProperty(ezd6.texts, key);
       text = (up ?'+':'') + foundry.utils.getProperty(foundry.utils.expandObject(context), key) + " " + text ;
@@ -150,7 +151,7 @@ Hooks.on('renderEZD6CharacterSheet', (app, html)=>{
 // adds a flag to the hook with results of d6 rolls
 Hooks.on('preCreateChatMessage', async (message)=>{
   if (!message.rolls.length) return true;
-  if (!message.flavor) message.updateSource({flavor: " "})
+  //if (!message.flavor) message.updateSource({flavor: " "})
   if (message.flavor.toUpperCase().includes('ATTACK') || message.flavor.toUpperCase().includes('SPELL') || message.flavor.toUpperCase().includes('MIRACLE'))
     if (game.user.targets.size) message.updateSource({flags:{ezd6:{targets: [...game.user.targets.map(t=>t.document.uuid)]}}});
   message.updateSource({flags:{ezd6:{results: message.rolls[0].dice.filter(d=>d.faces==6).reduce((a,x)=>{return [...a, ...x.results]}, [])}}});
@@ -159,21 +160,28 @@ Hooks.on('preCreateChatMessage', async (message)=>{
 Hooks.on('preUpdateChatMessage', (message, data)=>{
   if (!message.rolls?.length || !data.rolls?.length) return true;
   let roll = Roll.fromJSON(data.rolls[0]);
-  if (!message.flavor) foundry.utils.setProperty(data, "flavor", `Roll`);
+  //if (!message.flavor) foundry.utils.setProperty(data, "flavor", `Roll`);
   foundry.utils.setProperty(data, "flags.ezd6.results", roll.dice.filter(d=>d.faces==6).reduce((a,x)=>{return [...a, ...x.results]}, []));
 });
 
 // this does all the formatting for chat messages using Font-Awesome d6 glyphs
 Hooks.on('renderChatMessage', (message, html)=>{
   //console.log('render chat message', message)
-  if (message.flavor.includes("Draws a result")) return;
+  if (message.flavor.includes("Draws") && message.flavor.includes("result")) return;
   if (!message.rolls?.length) return;
   if (message.whisper.length && !message.whisper.includes(game.user.id)) return;
   if (message.rolls[0].dice.filter(d=>d.faces==6).length!=message.rolls[0].dice.length) return; 
-  html.find('.message-sender').css({color: message.user.color, fontWeight: 'bold'})
+  //html.find('.message-sender').css({color: message.user.color, fontWeight: 'bold'})
   //let flavor =  message.flavor;//= html.find('.flavor-text').text().trim();
   //if (flavor) 
-  html.find('.flavor-text').html(`<h3>${message.rolls[0].formula} # <span class="flavor">${message.flavor.capitalize()}</span></h3>`)
+  //`<span class="flavor-text"><h3>3d6kl1 # <span class="flavor">Roll</span></h3></span>`
+  if (!html.find('.flavor-text').length) html.find('.message-header').append(`<span class="flavor-text" ></span>`);
+  
+  html.find('.flavor-text').html(`<h3 draggable="true">${message.rolls[0].formula} # <span class="flavor">${message.flavor.capitalize()}</span></h3>`)
+  html.find('h3[draggable=true]').on('dragstart', function(e){
+    console.log(`[[/r ${$(this).text()}]]`)
+     e.originalEvent.dataTransfer.setData("text/plain", `[[/r ${$(this).text()}]]`);
+  })
   if (game.user.isGM)
   html.find('span.flavor').click(function(){
     if ($(this).prop('contenteditable')=='true') return;
@@ -217,15 +225,18 @@ Hooks.on('renderChatMessage', (message, html)=>{
         delete r.active;
   }
   let content = results.reduce((acc, r, i)=> {
-    let color = 'inherit';
+    let color = 'white';
     if (r.hasOwnProperty('success') && !r.success) color ="grey";
     if (r.hasOwnProperty('discarded') && r.discarded) color ="grey";
     if (message.flavor.toUpperCase().includes('ATTACK') && r.result >= (brutal?5:6) && !r.discarded) color = "#aef601";
     if (r.hasOwnProperty('active') && !r.active) color = "grey";
     if ((message.flavor.toUpperCase().includes('SPELL') || message.flavor.toUpperCase().includes('MIRACLE')) && r.result == 1) color = "red";
-    return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color};">${(message.whisper.includes(game.user.id) || !message.whisper.length)?ezd6.d6pips[r.result]:ezd6.d6pips[0]}</span>&nbsp;`;
-    }, ``) + 
-    actions.reduce((a,x)=>a+=`<p>${x}</p>`,``);
+    return acc += `<span data-index="${i}" data-roll="${r.result}" class="die" style="position: relative; font-size: 32px; color: ${color}; ">${(message.whisper.includes(game.user.id) || !message.whisper.length)?ezd6.d6pips[r.result]:ezd6.d6pips[0]}</span>&nbsp;`;
+    }, ``)
+  if (message.rolls[0].formula.toLowerCase().includes('cs'))
+    if (results.filter(r=>r.success).length) content += '<h4 style="color:#0F0">SUCCEEDED</h4>';
+    else content += '<h4 style="color:#F00">FAILED</h4>';
+  content += actions.reduce((a,x)=>a+=`<p>${x}</p>`,``);
   if (game.system.id == "ezd6" && message.flags.ezd6?.targets?.length && (game.user.isGM || game.settings.get('ezd6-roll-messages', 'toHitForPlayers')))
     content = message.flags.ezd6?.targets.reduce((a,x)=>{
       let t = fromUuidSync(x);
@@ -241,10 +252,12 @@ Hooks.on('renderChatMessage', (message, html)=>{
     if (!!resultsActive6?.filter(r=>!r.hasOwnProperty('count') && r.active)?.length && resultsOriginalCrit) {
       let confirmRolls = message.flags.ezd6?.results?.filter(r=>r.hasOwnProperty('count'));
       if ((confirmRolls?.length && confirmRolls.at(-1)?.result>=(brutal?5:6)) || (!confirmRolls?.length && resultsOriginalCrit)) {
-        content += `<button class="confirmCrit">${ezd6.d6pips[brutal?5:6]} Confirm Critical</button>`
+        content += `<button class="confirmCrit" ><span style="color: #aef601;">${ezd6.d6pips[brutal?5:6]}</span> Confirm Critical</button>`
       }
     }
   }
+
+  
   html.find('div.message-content').html(content);
 
   html.find('button.confirmCrit').click(function(e){
@@ -260,8 +273,10 @@ Hooks.on('renderChatMessage', (message, html)=>{
   }).mouseout(function(e) {
     $('#hud').find('div.token-marker').remove();
   });
-
-  if (game.user.isGM)
+  
+  return;
+  if (!game.user.isGM) return;
+  
   html.find('span.die').click(async function(e){
     e.stopPropagation();
     let results = [...message.flags.ezd6?.results];
@@ -269,6 +284,11 @@ Hooks.on('renderChatMessage', (message, html)=>{
     if (message.flags.ezd6?.actions) actions = message.flags.ezd6?.actions;
     let index = +$(this).data().index;
     let roll = +$(this).data().roll;
+    if (e.ctrlKey) {
+      actions.push(`${game.user.name} deleted die ${index+1} - ${ezd6.d6pips[results[index].result]}`);
+      results.splice(index, 1);
+      return message.update({flags:{ezd6:{results, actions}}});
+    }
     if (e.ctrlKey) {
       actions.push(`${game.user.name} deleted die ${index+1} - ${ezd6.d6pips[results[index].result]}`);
       results.splice(index, 1);
@@ -282,6 +302,30 @@ Hooks.on('renderChatMessage', (message, html)=>{
     }
     results[index].result = Math.clamped(roll + (e.originalEvent?-1:1), 0, 6);
     actions.push(`${game.user.name} ${e.originalEvent?"subtracted 1 from":"added 1 to"} die ${index+1} - ${ezd6.d6pips[results[index].result]}`);
+    return message.update({flags:{ezd6:{results, actions}}});
+    // experiement
+    if (e.shiftKey) {
+      
+      results[index].result = Math.clamped(roll + (e.originalEvent?-1:1), 0, 6);
+      actions.push(`${game.user.name} ${e.originalEvent?"subtracted 1 from":"added 1 to"} die ${index+1} - ${ezd6.d6pips[results[index].result]}`);
+      return message.update({flags:{ezd6:{results}}});
+    }
+    /*
+      let highest, lowest, modifier;
+      for (let r of results.map(r=>r.result)) {
+        if (highest == undefined) highest = r;
+        if (lowest == undefined) lowest = r;
+        if (r > highest) highest = r;
+        if (lowest < undefined) lowest = r;
+      }
+      if (results.map(r=>r.result)[index])*/
+    for (let r of results) {
+      r.active = false;
+      r.discarded = true
+    }
+    results[index].active = true
+    results[index].discarded = false
+      //results[index].success = results[index].active;
     return message.update({flags:{ezd6:{results, actions}}})
     //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
   }).contextmenu(function(){$(this).click()})
@@ -296,7 +340,7 @@ Hooks.on('renderChatLog', (app, html)=>{
   html.find('#chat-controls').find('.chat-control-icon').remove();
   //.find('i').removeClass('fa-dice-d20').addClass('fa-dice')
 
-  html.find('#chat-controls').append($(`<a class="flavor" style="margin:.1em; float:right;"><i class="fas fa-eye"></i></a>`).click(async function(e){
+  html.find('#chat-controls').append($(`<a class="mode" title"Roll Mode" style="margin:.1em; float:right;"><i class="fas fa-eye"></i></a>`).click(async function(e){
     let buttons = Object.entries(CONST.DICE_ROLL_MODES).reduce((a,[key, value], i)=>{ a[key] = {label: key.toLowerCase().capitalize(), callback: ()=> { return game.settings.set("core", "rollMode", value);}}; return a},{})
     await Dialog.wait({title: 'Roll Mode', buttons, 
     render:(html)=>{
@@ -306,16 +350,20 @@ Hooks.on('renderChatLog', (app, html)=>{
       html.find(`button.${rollMode}`).css({'box-shadow':'inset 1px 1px 10px #0f0'})
     }, close:()=>{return ''}}, {width: 50, left:window.innerWidth, top: window.innerHeight});
   }));
-  html.find('#chat-controls').prepend($(`<a class="flavor" style="margin:.1em;"><i class="fas fa-hashtag"></i></a>`).click(async function(e){
+  html.find('#chat-controls').prepend($(`<a class="flavor" title="Flavor" style="margin:.1em;"><i class="fas fa-hashtag"></i></a>`).click(async function(e){
     let flavors = ['Attack', 'Task', 'Armor Save', 'Cast Spell', 'Perform Miracle', 'Holy Light', 'Miraculous Save', 'Resistance'];
-    if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('WARRIOR')).length) flavors.splice(1, 0, 'Brutal Attack');
+    if (game.user.character?.items.filter(i=>i.type="inclination" && i.name.toUpperCase().includes('DEVOUT')).length) flavors.splice(3, 0, 'Perform Miracle');
+      if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('FRIAR')).length) flavors.splice(1, 0, 'Holy Light');
+      if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('WARRIOR')).length) flavors.splice(1, 0, 'Brutal Attack');
+      if (game.user.isGM || game.user.character?.items.filter(i=>i.type="heropath" && i.name.toUpperCase().includes('CONJURER')).length) flavors.splice(1, 0, 'Cast Spell');
     if (game.user.isGM) flavors.push('Aloofness');
     let buttons = flavors.reduce((a,f,i)=>{ a[f.slugify()] = { label: f, callback: ()=> { return f; }}; return a;}, {});
     let options = $(this).offset();
         //options.left -= 190;
         options.top -= 45;
         options.width = 80;
-    let flavor = await Dialog.wait({title: 'Roll Flavor', buttons, render:(html)=>{$(html[2]).css({'flex-direction':'column'})}, close:()=>{return ''}},options)
+    let flavor = await Dialog.wait({title: 'Roll Flavor', buttons, render:(html)=>{$(html[2]).css({'flex-direction':'column'})}, close:()=>{return ''}}, options);
+    if (!flavor) return;
     let textarea = html.find('#chat-message');
     let splitMessage = textarea.val().split(' # ')
     if (!splitMessage[0]) return textarea.val(' # ' + flavor);;
@@ -332,7 +380,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.push(flavor)
     textarea.val(splitMessage.join(' # '));
   }))
-  html.find('#chat-controls').prepend($(`<a class="bane" style="width:auto; margin:.1em; font-size: 20px;"><i class="fas fa-k"></i><i class="fas fa-l"></i><i class="fas fa-1"></i></a>`)
+  html.find('#chat-controls').prepend($(`<a class="bane" title="Keep Lowest One" style="width:auto; margin:.1em; font-size: 20px;"><i class="fas fa-k"></i><i class="fas fa-l"></i><i class="fas fa-1"></i></a>`)
   .click(function(e){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
@@ -344,7 +392,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '))
   }).contextmenu(function(e){$(this).click()}))
-  html.find('#chat-controls').prepend($(`<a class="boon" style="width:auto; margin:.1em; font-size: 20px;"><i class="fas fa-k"></i><i class="fas fa-h"></i><i class="fas fa-1"></i></a>`)
+  html.find('#chat-controls').prepend($(`<a class="boon" title="Keep Highest One" style="width:auto; margin:.1em; font-size: 20px;"><i class="fas fa-k"></i><i class="fas fa-h"></i><i class="fas fa-1"></i></a>`)
   .click(function(e){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
@@ -356,7 +404,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '));
   }).contextmenu(function(e){$(this).click()}))
-  html.find('#chat-controls').prepend($(`<a class="sub" style="margin:.1em;"><i class="fas fa-square-minus"></i></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="sub" title="Subtract D6" style="margin:.1em;"><i class="fas fa-square-minus"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (!splitMessage[1]) return;
     let roll = new Roll(splitMessage[1]);
@@ -366,7 +414,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '))
   }))
-  html.find('#chat-controls').prepend($(`<a class="add" style="margin:.1em;"><i class="fas fa-square-plus"></i></a>`).click(function(){
+  html.find('#chat-controls').prepend($(`<a class="add" title="Add D6" style="margin:.1em;"><i class="fas fa-square-plus"></i></a>`).click(function(){
     let splitMessage = html.find('#chat-message').val().split(' ');
     if (splitMessage.length == 1) return $(this).prev().click();
     if (!splitMessage[1]) return;
@@ -377,7 +425,7 @@ Hooks.on('renderChatLog', (app, html)=>{
     splitMessage.splice(1,1,roll.formula);
     html.find('#chat-message').val(splitMessage.join(' '));
   }))
-  html.find('#chat-controls').prepend($(`<a class="dice" style="width:auto; margin:.2em"><i class="fas fa-dice"></i></a>`))
+  html.find('#chat-controls').prepend($(`<a class="dice" title="Roll\nLeft Click: +d6\nRight Click: -d6" style="width:auto; margin:.2em"><i class="fas fa-dice"></i></a>`))
   //for (let i=6; i>0; i--) html.find('.control-buttons').prepend($(`<a class=><i class="fas fa-${i}"></i></a>`))
   html.find('#chat-form > a').remove();
   html.find('select.roll-type-select').hide();
@@ -414,32 +462,17 @@ Hooks.on('renderChatLog', (app, html)=>{
 })
 
 Hooks.on('getChatLogEntryContext', (html, options)=>{
-  options.unshift({
-    name: "Change Flavor",
-    icon: '<i class="fa-solid fa-hashtag"></i>',
-    condition: li => {
-      const message = game.messages.get(li.data("messageId"));
-      return message.user.id == game.user.id || game.user.isGM;
-    },
-    callback: li => {
-      let offset = $(li).offset()
-      const message = game.messages.get(li.data("messageId"));
-      new Dialog({
-        title:'Flavor',
-        content:'<input type="text" style="text-align:center" autofocus></input>',
-        render:(html)=>{ html.find('input').val(message.flavor); },
-        buttons: {confirm: {icon:'<i class="fa-solid fa-check"></i>', callback: (html)=>{ message.update({flavor: html.find('input').val()})}} },
-        default: 'confirm'
-      },{width:200, top: offset.top, left: offset.left-200}).render(true)
-      return;
-    }
-  });
+  
   options.unshift({
     name: "Use Karma",
     icon: ezd6.karma,
     condition: li => {
       const message = game.messages.get(li.data("messageId"));
-      return message.user.id == game.user.id && foundry.utils.getProperty(game.user.character, ezd6.system.karma) > 0 && !(message.flavor.toUpperCase().includes('SPELL') && message.flavor.toUpperCase().includes('MIRACLE'))
+      if (!message.rolls?.length) return false;
+      if (message.flavor.toUpperCase().includes('SPELL')) return false;
+      if (message.flavor.toUpperCase().includes('MIRACLE')) return false;
+      if (message.rolls[0].total == 1) return false;
+      return message.user.id == game.user.id && foundry.utils.getProperty(game.user.character, ezd6.system.karma) > 0;
     },
     callback: li => {
       const message = game.messages.get(li.data("messageId"));
@@ -451,6 +484,7 @@ Hooks.on('getChatLogEntryContext', (html, options)=>{
     icon: ezd6.herodice,
     condition: li => {
       const message = game.messages.get(li.data("messageId"));
+      if (!message.rolls?.length) return false;
       return message.user.id == game.user.id && foundry.utils.getProperty(game.user.character, ezd6.system.herodice) > 0 ;
     },
     callback: li => {
@@ -458,7 +492,116 @@ Hooks.on('getChatLogEntryContext', (html, options)=>{
       return ezd6.useHeroDie(message)
     }
   });
+  options.unshift({
+    name: "Change Flavor",
+    icon: '<i class="fa-solid fa-hashtag"></i>',
+    condition: li => {
+      const message = game.messages.get(li.data("messageId"));
+      if (!message.rolls?.length) return false;
+      return message.user.id == game.user.id || game.user.isGM;
+    },
+    callback: li => {
+      let offset = $(li).offset()
+      const message = game.messages.get(li.data("messageId"));
+      new Dialog({
+        title:'Flavor',
+        content:'<input type="text" style="text-align:center" autofocus></input>',
+        render:(html)=>{ html.find('input').val(message.flavor).select(); },
+        buttons: {confirm: {icon:'<i class="fa-solid fa-check"></i>', callback: (html)=>{ message.update({flavor: html.find('input').val()})}} },
+        default: 'confirm'
+      },{width:200, top: offset.top, left: offset.left-200}).render(true)
+      return;
+    }
+  });
+  if (!game.user.isGM) return;
   
+  options.unshift({
+    name: "Keep Lowest",
+    icon: '<i class="fa-solid fa-down-long"></i>',
+    condition: li => {
+      const message = game.messages.get(li.data("messageId"));
+      if (!message.rolls?.length) return false;
+      return true;
+    },
+    callback: async li => {
+      let message = game.messages.get(li.data("messageId"));
+      //console.log(message);
+      let roll = message.rolls[0];
+      let terms = roll.terms;
+      let modifier = 'kl1'
+      let newRoll = new Roll();
+      newRoll.terms.push(roll.terms[0]);
+      newRoll.terms[0].modifiers=[modifier];
+      newRoll._evaluated=false;
+      let highest, lowest;
+      for (let i = 0; i<newRoll.terms.length; i++)
+        if (newRoll.terms[i] instanceof DiceTerm && newRoll.terms[i].faces == 6 && terms[i].results.length>1) {
+          for (let r = 0; r<terms[i].results.length; r++) {
+            if (!highest || highest.result < terms[i].results[r].result) highest = {index:r, result:terms[i].results[r].result};
+            if (!lowest || lowest.result > terms[i].results[r].result) lowest = {index:r, result:terms[i].results[r].result};
+          }
+        }
+      for (let i = 0; i<newRoll.terms.length; i++) {
+        if (newRoll.terms[i] instanceof DiceTerm && newRoll.terms[i].faces == 6 && terms[i].results.length>1) {
+          
+          for (let d = 0; d<newRoll.terms[i].results.length; d++) 
+            if (d !== lowest.index) {
+               terms[i].results[d].active = false;
+               terms[i].results[d].discarded = true;
+            } else {
+              terms[i].results[d].active = true;
+              terms[i].results[d].discarded = false;
+            }
+        }
+      }
+      newRoll._formula = Roll.fromTerms(newRoll.terms).formula;
+      await newRoll.evaluate();
+      await message.update({rolls: [JSON.stringify(newRoll)]})
+    }
+  });
+  options.unshift({
+    name: "Keep Highest",
+    icon: '<i class="fa-solid fa-up-long"></i>',
+    condition: li => {
+      const message = game.messages.get(li.data("messageId"));
+      if (!message.rolls?.length) return false;
+      return true;
+    },
+    callback: async li => {
+      let message = game.messages.get(li.data("messageId"));
+      //console.log(message);
+      let roll = message.rolls[0];
+      let terms = roll.terms;
+      let modifier = 'kh1'
+      let newRoll = new Roll();
+      newRoll.terms.push(roll.terms[0]);
+      newRoll.terms[0].modifiers=[modifier];
+      newRoll._evaluated=false;
+      let highest, lowest;
+      for (let i = 0; i<newRoll.terms.length; i++)
+        if (newRoll.terms[i] instanceof DiceTerm && newRoll.terms[i].faces == 6 && terms[i].results.length>1) {
+          for (let r = 0; r<terms[i].results.length; r++) {
+            if (!highest || highest.result < terms[i].results[r].result) highest = {index:r, result:terms[i].results[r].result};
+            if (!lowest || lowest.result > terms[i].results[r].result) lowest = {index:r, result:terms[i].results[r].result};
+          }
+        }
+      for (let i = 0; i<newRoll.terms.length; i++) {
+        if (newRoll.terms[i] instanceof DiceTerm && newRoll.terms[i].faces == 6 && terms[i].results.length>1) {
+          for (let d = 0; d<newRoll.terms[i].results.length; d++) 
+            if (d !== highest.index) {
+              terms[i].results[d].active = false;
+              terms[i].results[d].discarded = true;
+            } else {
+              terms[i].results[d].active = true;
+              terms[i].results[d].discarded = false;
+            }
+        }
+      }
+      newRoll._formula = Roll.fromTerms(newRoll.terms).formula;
+      await newRoll.evaluate();
+      await message.update({rolls: [JSON.stringify(newRoll)]})
+    }
+  });
 });
 
 ezd6.renderPlayerDialog = function() {
@@ -532,7 +675,7 @@ ezd6.renderRabbleRouserDialog = function() {
   </style>
   <div style="display:grid; grid-template-columns: repeat(${columns.length}, auto); column-gap: .75em; row-gap: .25em; color: white; font-size: 20px;">`;
     div += columns.reduce((acc, x, i)=>acc+=`<div style="border-bottom: 1px solid white;" title="${x.label}">${x.icon}</div>`, ``);
-  for (let user of game.users.filter(u=>!!u.character&&u.active))//.filter(u=>!u.isGM)) 
+  for (let user of game.users.filter(u=>!!u.character))//.filter(u=>!u.isGM)) 
     div += columns.reduce((acc, x, i)=>acc+=`<div style="text-align:${i?"center":"left"};" title="${x.label}"><a class="ezd6-ui-link" data-key="${x.key}" data-label="${x.label}" data-user="${user.id}">${foundry.utils.hasProperty(user.character, x.key)?foundry.utils.getProperty(user.character, x.key):`<img src="${user.character.img}" height=20>&nbsp;${user.character.name}`}</a></div>`, ``);
   div += `</div></div>`;
   let $div = $(div);
@@ -542,10 +685,10 @@ ezd6.renderRabbleRouserDialog = function() {
     let character = user.character;
     if (this.dataset.key==columns[3].key && !e.originalEvent && foundry.utils.getProperty(user.character, ezd6.system.strikes.value) == foundry.utils.getProperty(user.character, ezd6.system.strikes.max)) return ui.notifications.warn(`Max strikes reached.`);
     if (foundry.utils.getProperty(user.character, this.dataset.key)-1<0 && !!e.originalEvent) return ui.notifications.warn(`Value cannot be negative.`);
-    if (!foundry.utils.hasProperty(user.character, this.dataset.key) && !!e.originalEvent) 
-      return character.sheet.render(true);
+    //if (!foundry.utils.hasProperty(user.character, this.dataset.key) && !!e.originalEvent) 
+      //return character.sheet.render(true);
     if (this.dataset.key=="name" ) 
-      if (game.modules.get('ffs')?.active && game.settings.get('ffs', 'defaultSheet')) return character.freeformSheet(game.settings.get('ffs', 'defaultSheet'));
+      if (game.modules.get('ffs')?.active && game.settings.get('ffs', 'defaultSheet') && !e.originalEvent) return character.freeformSheet(game.settings.get('ffs', 'defaultSheet'));
       else return character.sheet.render(true);
     //if (this.dataset.key=="hd" && user.flags.ezd6["hd"]==1 && !e.originalEvent) //
     //return ui.notifications.warn("A player may only have 1 hero die.");
@@ -577,7 +720,7 @@ ezd6.renderRabbleRouserDialog = function() {
     //await character.update({[this.dataset.key]: +foundry.utils.getProperty(character, this.dataset.key)+change});
     
     //ChatMessage.create({content : `${character.name} ${(e.shiftKey||!!e.originalEvent)?"loses":"gains"} a ${this.dataset.label.endsWith('s')?this.dataset.label.substring(0, 6).toLowerCase():this.dataset.label.toLowerCase()}`})
-  }).contextmenu(async function(e){ $(this).click(); })
+  });
   html.first().append($div);
 
   // return to dialog definition
@@ -667,7 +810,7 @@ ezd6.useHeroDie = async function(message) {
   let result = results[index];
   let roll = result.result;
   if (roll == 6) return ui.notifications.warn("You do not need to use a Hero Die. You rolled of 6.");
-  let hd = await new Roll('1d6').roll();
+  let hd = await new Roll('1d6[hero]').roll();
   if (game.modules.get('dice-so-nice')?.active) await game.dice3d.showForRoll(hd, game.user, true);
   results[index].result = hd.total;
   let save = Number(message.rolls[0].formula.split('>=')[1]);
@@ -866,5 +1009,76 @@ Hooks.on('diceSoNiceReady', (dice3d) => {
       'modules/ezd6-roll-messages/faces/d6-6-ezd6.webp'
     ],
 	system:"ezd6"
+  });
+
+  game.dice3d.addColorset({
+  name: "hero",
+            foreground: "#000000",
+            background: "#aef601",
+            outline: "#3a00ae",
+            edge: "#3a00ae",
+            texture: "none",
+            material: "metal",
+            font: "d6",
+            visibility: "visible",
+        });
+
+});
+
+Hooks.on('renderPlayerList', (app, html) => {
+  html.prepend(`<style>#player-list i {padding: .05em;}</style>`)
+  html.css({width: 'max-content', 'padding-right': '.2em'})
+  html.find('ol#player-list').css({
+    'display': 'grid',
+    'grid-template-columns': 'repeat(5, max-content)',
+    'column-gap': '.2em'
+  });
+  //html.css({width: '400px'})
+ let columns = [ 
+  [ezd6.system.strikes.value ,   ezd6.strikes   ,  "Strikes"], 
+  [ezd6.system.herodice ,   ezd6.herodice     , "Hero Dice"],
+  [ezd6.system.karma,   ezd6.karma, "Karma"]
+  ];
+  for (let user of game.users.filter(u=>u.character)) {
+    let $li = html.find(`li[data-user-id="${user.id}"]`);
+     $li.after(`<a style="margin-right:.25em; padding-top:.15em;" class="char-name" data-id="${user.character.id}" data-user="${user.id}">${user.character.name}</a>` + 
+               columns.reduce((acc, x, i)=>acc+=`<a style="padding:.1em;" class="ezd6-ui-link" title="${x[2]}" data-column="${i}" data-key="${x[0]}" data-user="${user.id}">${Array(foundry.utils.getProperty(user.character, x[0])+1).join(x[1])}</a>`, ``));
+     $li.find(".player-name").html(user.name+'&ensp;');
+  }
+  for (let user of game.users.filter(u=>!u.character)) {
+    let $li = html.find(`li[data-user-id="${user.id}"]`);
+     $li.after(`<span style="margin-right:.25em; padding-top:.15em;"></span><span></span><span></span><span></span>` );
+     $li.find(".player-name").html(user.name+'&ensp;');
+  }
+   html.find('a.char-name').click(function(){
+     let character = game.actors.get(this.dataset.id);
+     character.sheet.render(true);
+     
+   }).contextmenu(function(){
+     let character = game.actors.get(this.dataset.id);
+     if (game.modules.get('ffs')?.active && game.settings.get('ffs', 'defaultSheet')) return character.freeformSheet(game.settings.get('ffs', 'defaultSheet'));
+   });
+  if (!game.user.isGM) return;
+  html.find(`a.ezd6-ui-link`).click(async function(e){
+    console.log(e, this.dataset.user)
+    let user = game.users.get(this.dataset.user);
+    let character = user.character;
+    if (foundry.utils.getProperty(user.character, this.dataset.key)-1<0 && !!e.originalEvent) return ui.notifications.warn(`Value cannot be negative.`);
+    await character.update({[this.dataset.key]: (e.shiftKey||!!e.originalEvent)?+foundry.utils.getProperty(character, this.dataset.key)-1:+foundry.utils.getProperty(character, this.dataset.key)+1});
+  }).contextmenu(async function(e){ $(this).click(); })
+    
+  let updateCharacterDebounce = foundry.utils.debounce((character,key,value)=> { character.update({[key]: value}); }, 500);
+    
+  html.find(`a.ezd6-ui-link`).on('wheel', async function(e){
+    let user = game.users.get(this.dataset.user);
+    let character = user.character;
+    let change = (e.originalEvent.wheelDelta<0)?-1:1;
+    let value = [...$(this).find('i')].length;
+    value+=change;
+    if (value<0) return;
+    if (+this.dataset.column == 0 && value > foundry.utils.getProperty(character, ezd6.system.strikes.max)) return;
+    if (e.originalEvent.wheelDelta>0) $(this).append($(columns[this.dataset.column][1]))
+    else $(this).find('i').first().remove();
+    updateCharacterDebounce(character, this.dataset.key, value);
   });
 });
