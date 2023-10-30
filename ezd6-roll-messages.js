@@ -604,141 +604,6 @@ Hooks.on('getChatLogEntryContext', (html, options)=>{
   });
 });
 
-ezd6.renderPlayerDialog = function() {
-  let id = 'ezd6-player-dialog';
-  if ($(`div#${id}`).length) 
-    return ui.windows[$(`div#${id}`).data().appid].render(true).bringToTop();
-  
-  let columns = [ 
-    [ezd6.system.strikes.value ,   ezd6.strikes   ,  "Strikes"], 
-    [ezd6.system.herodice ,   ezd6.herodice     , "Hero Dice"],
-    [ezd6.system.karma,   ezd6.karma, "Karma"]
-    ];
-  let d = new Dialog({title: `EZD6 Pusher & Shover Dialog` ,  content: ``,  buttons: {},  render: async (html)=>{
-  html.first().parent().css({background:'unset'});
-  let div = `<div class="${id}" style=""> 
-  <style>
-  #${id} {width:auto !important;}
-  div.${id} { width:auto !important; height: max-content; margin-top:0px;  z-index: 29;}
-  div.macro > a.macro > img {border:unset;}
-  div.macro > a.macro > img:hover {filter: drop-shadow(0px 0px 3px rgb(255 0 0 / 0.9)) !important;
-  span.icons {margin-left: .5em}
-  }
-  </style><div style="width: max-content; display:grid; grid-template-columns: auto auto auto auto; column-gap: .25em; row-gap: .25em; color: white; font-size: 40px;">`;
-  
-  for (let user of game.users.filter(u=>u.character&&u.active))
-    div += `<span style="margin-right:.25em;">${user.character.name}</span>` + columns.reduce((acc, x, i)=>acc+=`<span style="">${Array(foundry.utils.getProperty(user.character, x[0])+1).join(x[1]+"&nbsp;")}${i==0?Array(Math.max(foundry.utils.getProperty(user.character, ezd6.system.strikes.max)-foundry.utils.getProperty(user.character, ezd6.system.strikes.value)+1, 0)).join('<i class="fa-solid fa-heart" style="color: black;-webkit-text-stroke: 1px red;"></i>&nbsp;'):''}</span>`, ``);
-    //<span class="header-stats" style="margin-left:.5em;">
-  
-  div += `</div>`
-  let $div = $(div);
-  html.first().append($div);
-  },//end render
-    close: async (html)=>{
-        //delete character.apps[d.appId];
-        if (Hooks.sheetHook) Hooks.off('', Hooks.sheetHook);
-        if (Hooks.ezd6playerui) Hooks.off('', Hooks.ezd6playerui)
-        return;
-      }
-  }, {width: 'auto', height: 'auto', id}
-  ).render(true);
-  
-  
-  if (Hooks.ezd6playerui) Hooks.off('', Hooks.ezd6playerui)
-  Hooks.ezd6playerui = 
-    Hooks.on('updateActor', (actor, updates)=>{
-      d.render(true, {height: 'auto', width: 'auto'})
-    })
-}
-
-ezd6.renderRabbleRouserDialog = function() {
-  if (!game.user.isGM) return;
-  let id = 'ezd6-rr-dialog';
-  if ($(`div#${id}`).length) 
-    return ui.windows[$(`div#${id}`).data().appid].render(true).bringToTop();
-    
-  let columns = [ 
-      {key:"name", icon:'<i class="fa-solid fa-user"></i>', label:"Character Name"}, 
-      {key:ezd6.system.armorsave, icon: '<i class="fa-solid fa-shield"></i>', label: "Wound Save"}, 
-      {key:ezd6.system.miraculoussave, icon: '<i class="fa-solid fa-hand-holding-heart"></i>', label:"Miraculous Save"}, 
-      {key:ezd6.system.strikes.value, icon: ezd6.strikes, label:"Strike"}, 
-      {key:ezd6.system.herodice, icon: ezd6.herodice, label:"Hero Die"},
-      {key:ezd6.system.karma, icon: ezd6.karma, label: "Karma"}
-    ];
-    
-  let d = new Dialog({title: "EZD6 Rabble Rouser Dialog",  content: ``,  buttons: {},  render: async (html)=>{
-      //position: absolute; top: 30px; left: 0px;
-  html.first().parent().css({background:'unset'})//border: 1px solid var(--color-border-dark);border-radius: 5px; background-image: url(../ui/denim075.png); 
-  let div = `<div class="${id}"> 
-  <style>
-  div.${id} {  width: max-content; height: max-content;}
-  </style>
-  <div style="display:grid; grid-template-columns: repeat(${columns.length}, auto); column-gap: .75em; row-gap: .25em; color: white; font-size: 20px;">`;
-    div += columns.reduce((acc, x, i)=>acc+=`<div style="border-bottom: 1px solid white;" title="${x.label}">${x.icon}</div>`, ``);
-  for (let user of game.users.filter(u=>!!u.character))//.filter(u=>!u.isGM)) 
-    div += columns.reduce((acc, x, i)=>acc+=`<div style="text-align:${i?"center":"left"};" title="${x.label}"><a class="ezd6-ui-link" data-key="${x.key}" data-label="${x.label}" data-user="${user.id}">${foundry.utils.hasProperty(user.character, x.key)?foundry.utils.getProperty(user.character, x.key):`<img src="${user.character.img}" height=20>&nbsp;${user.character.name}`}</a></div>`, ``);
-  div += `</div></div>`;
-  let $div = $(div);
-
-  $div.find(`a.ezd6-ui-link`).click(async function(e){
-    let user = game.users.get(this.dataset.user);
-    let character = user.character;
-    if (this.dataset.key==columns[3].key && !e.originalEvent && foundry.utils.getProperty(user.character, ezd6.system.strikes.value) == foundry.utils.getProperty(user.character, ezd6.system.strikes.max)) return ui.notifications.warn(`Max strikes reached.`);
-    if (foundry.utils.getProperty(user.character, this.dataset.key)-1<0 && !!e.originalEvent) return ui.notifications.warn(`Value cannot be negative.`);
-    //if (!foundry.utils.hasProperty(user.character, this.dataset.key) && !!e.originalEvent) 
-      //return character.sheet.render(true);
-    if (this.dataset.key=="name" ) 
-      if (game.modules.get('ffs')?.active && game.settings.get('ffs', 'defaultSheet') && !e.originalEvent) return character.freeformSheet(game.settings.get('ffs', 'defaultSheet'));
-      else return character.sheet.render(true);
-    //if (this.dataset.key=="hd" && user.flags.ezd6["hd"]==1 && !e.originalEvent) //
-    //return ui.notifications.warn("A player may only have 1 hero die.");
-    await character.update({[this.dataset.key]: (e.shiftKey||!!e.originalEvent)?+foundry.utils.getProperty(character, this.dataset.key)-1:+foundry.utils.getProperty(character, this.dataset.key)+1});
-    
-    //ChatMessage.create({content : `${character.name} ${(e.shiftKey||!!e.originalEvent)?"loses":"gains"} a ${this.dataset.label.endsWith('s')?this.dataset.label.substring(0, 6).toLowerCase():this.dataset.label.toLowerCase()}`})
-  }).contextmenu(async function(e){ $(this).click(); })
-    
-  let updateCharacterDebounce = foundry.utils.debounce((character,key,value)=> { character.update({[key]: value}); }, 500);
-    
-  $div.find(`a.ezd6-ui-link`).on('wheel', async function(e){
-    let user = game.users.get(this.dataset.user);
-    let character = user.character;
-    let change = (e.originalEvent.wheelDelta<0)?-1:1;
-    
-    
-    if (!foundry.utils.hasProperty(user.character, this.dataset.key) && !!e.originalEvent) return;
-    if (this.dataset.key=="name" ) return ;
-    //if (this.dataset.key=="hd" && user.flags.ezd6["hd"]==1 && !e.originalEvent) //
-    //return ui.notifications.warn("A player may only have 1 hero die.");
-    let value = parseInt(this.innerText);
-    console.log(value);
-    if (isNaN(value)) return;
-    value+=change;
-    if (value<0) return;// ui.notifications.warn(`Value cannot be negative.`);
-    if (this.dataset.key==columns[3].key && value > foundry.utils.getProperty(character, ezd6.system.strikes.max)) return;// ui.notifications.warn(`Max strikes reached.`);
-    this.innerText = value;
-    updateCharacterDebounce(character, this.dataset.key, value);
-    //await character.update({[this.dataset.key]: +foundry.utils.getProperty(character, this.dataset.key)+change});
-    
-    //ChatMessage.create({content : `${character.name} ${(e.shiftKey||!!e.originalEvent)?"loses":"gains"} a ${this.dataset.label.endsWith('s')?this.dataset.label.substring(0, 6).toLowerCase():this.dataset.label.toLowerCase()}`})
-  });
-  html.first().append($div);
-
-  // return to dialog definition
-  },
-    close: async (html)=>{
-        if (Hooks.ezd6gmui) Hooks.off('', Hooks.ezd6gmui)
-        return;
-      }
-  }, {width: 'auto', height: 'auto', id}
-  ).render(true);
-
-  if (Hooks.ezd6gmui) Hooks.off('', Hooks.ezd6gmui)
-  Hooks.ezd6gmui = 
-    Hooks.on('updateActor', (actor)=>{
-      if (game.users.map(u=>u.character?.id).filter(c=>c).includes(actor.id)) d.render(true, {height: 'auto', width: 'auto'})
-    })
-}
-
 
 ezd6.confirmCrit = async function(message, brutal) {
   //let message = game.messages.contents.filter(m=>m.user==game.user&&m.flags.ezd6?.results?.length).reverse()[0];
@@ -822,166 +687,22 @@ ezd6.useHeroDie = async function(message) {
   //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
 }
 
-Hooks.once('ready', async ()=>{
-  let pack = game.packs.get('ezd6-roll-messages.ezd6-macros');
-  let folder = game.folders.find(f=>f.type=="Macro" && f.name=="EZD6")
-  if (!folder) folder = await Folder.create({type:"Macro", name:"EZD6"})
-  let updateNeeded = [];
-  let map = {};
-  if (!pack) return;
-  for (let m of pack.index) {
-    let packMacro = await pack.getDocument(m._id);
-    //console.log(m._id, packMacro.flags['ezd6-roll-messages']?.id)
-    let gameMacro = game.macros.find(macro=>macro.flags['ezd6-roll-messages']?.id == packMacro.flags['ezd6-roll-messages']?.id)
-    if (!gameMacro) gameMacro = await Macro.create({...packMacro, ...{folder: folder.id, ownership:{default: CONST.DOCUMENT_PERMISSION_LEVELS.OBSERVER}}});
-    map[gameMacro.id] = m._id;
-    if (packMacro.command != gameMacro.command)
-      updateNeeded.push(gameMacro)
-  }
-  if (!updateNeeded.length) return console.log('No EZD6 macro updates detected.');
-  let d = new Dialog({
-    title: 'EZD6 Macros To Update',
-    content: updateNeeded.reduce((a,m)=>a+=`<div><h3>${m.name}<a class="update" style="float:right;" data-macro-id="${m.id}" data-pack-id="${map[m.id]}">Update</a></h3></div>`, ``),
-    buttons:{
-      updateAll:{ label: 'Update All', callback: async (html)=>{
-        for (let m of updateNeeded) {
-          let packMacro = await pack.getDocument(map[m.id]);
-          await m.update({command: packMacro.command});
-        }
-      }},
-      cancel: { label: 'Cancel', callback:(html)=>{
-        d.close();
-      }}
-    },
-    render: (html)=>{
-      html.find('a.update').click(async function(){
-        let packMacro = await pack.getDocument(this.dataset.packId);
-        await game.macros.get(this.dataset.macroId).update({command: packMacro.command})
-        $(this).text('Updated').off('click');
-      })
-    },
-    close: ()=>{return}
-  }).render(true)
-})
-
-ezd6.rollDialog = async function(title) {
-  let pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
-  let position = {};//{top: window.innerHeight-300};
-  let formula = await Dialog.wait({
-         title,
-         content:  `
-         <center style="margin-bottom: .5em;">
-         <div class="dice"></div>
-          <button style="width: 80px" name="bane">Bane</button>
-          <input style="width: 30px; display: none;" type="number" value="0" id="boon-bane"></input>
-          <input style="width: 100px; height: 32px; " type="text" value="1d6" name="formula"></input>
-          <button style="width: 80px" name="boon">Boon</button>
-          </center>
-         `,
-         render: (html) => {
-          html.parent().css({background:'#111', color: 'white'})
-            html.find('button, input').css({background:'unset', color: 'white'})
-           html.find('.dice').html([...Array(Math.abs(+html.find('#boon-bane').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i+1]}"></i>`, ""));
-           //html.find('.fa-solid').css('color', 'white')
-            html.find(`button[name="boon"]`).click(function(){
-              if (+html.find('#boon-bane').val()==5) return;
-              html.find('#boon-bane').val(+html.find('#boon-bane').val()+1);
-              html.find(`input[name="formula"]`).click();
-            });
-            
-            html.find(`button[name="bane"]`).click(function(){
-              if (+html.find('#boon-bane').val()==-5) return;
-              html.find('#boon-bane').val(+html.find('#boon-bane').val()-1);
-              
-              html.find(`input[name="formula"]`).click();
-            });
-            
-            html.find(`input[name="formula"]`).click(function(){
-                      let boonbane = +html.find('#boon-bane').val();
-                      let addDice = Math.abs(boonbane);
-                      let mod = (boonbane>0)?"kh1":"kl1";
-                      let num = 1 + addDice
-                      if (addDice==0) mod = "";
-                      $(this).val(num+"d6"+mod);
-                      html.find('.dice').html([...Array(Math.abs(+html.find('#boon-bane').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i+1]}"></i>`, ""));//
-                      if (+html.find('#boon-bane').val() == 0) return html.find('.fa-solid').css('color: white;')
-                      if (+html.find('#boon-bane').val() > 0) return html.find('.fa-solid').css('color', '#aef601')
-                      if (+html.find('#boon-bane').val() < 0) return html.find('.fa-solid').css('color', 'red')
-                    });
-         },
-         buttons: {
-             roll : { label : "Roll", callback : (html) => { 
-                      return html.find(`input[name="formula"]`).val();
-                      }
-                  },
-             cancel: { label : "Cancel", callback : (html) => { 
-                      return '';
-                      }
-                  }
-         },
-         default: 'roll',
-         close:   html => {
-             return ''}
-           },position
-        )
-return formula;
-}
-
-ezd6.magickDialog = async function(title) {
-  let pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
-  let position = {};//{top: window.innerHeight-300};
-let formula = await Dialog.wait({
-         title: title,
-         content:  `
-         <center style="margin-bottom: .5em;">
-         <div class="dice"></div>
-          <input style="width: 30px;font-size: 30px; border: none; display: none;" readonly type="number" value="1" id="power-level"></input>
-          <button style="width: 80px" name="minus"><i class="fa-solid fa-minus"></i></button>
-          <input style="width: 100px; height: 32px; " type="text" value="1d6" name="formula"></input>
-          <button style="width: 80px" name="plus"><i class="fa-solid fa-plus"></i></button>
-          </center>
-         `,
-         render: (html) => {
-          html.parent().css({background:'#111', color: 'white'})
-            html.find('button, input').css({background:'unset', color: 'white'})
-           html.find('.dice').html([...Array(Math.abs(+html.find('#power-level').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i]}"></i>`, ""));
-            html.find(`button[name="plus"]`).click(function(){
-              html.find('#power-level').val(Math.min(+html.find('#power-level').val()+1, game.user.isGM?6:3));
-              html.find(`input[name="formula"]`).click();
-            });
-            
-            html.find(`button[name="minus"]`).click(function(){
-              html.find('#power-level').val(Math.max(+html.find('#power-level').val()-1, 1));
-              html.find(`input[name="formula"]`).click();
-            });
-            
-            html.find(`input[name="formula"]`).click(function(){
-                      let powerLevel = +html.find('#power-level').val();
-                      if (powerLevel==1) mod = "d6";
-                      else mod = "d6kh";
-                      $(this).val(powerLevel+mod);
-                      html.find('.dice').html([...Array(Math.abs(+html.find('#power-level').val())+1)].reduce((a,x,i)=> a += `<i style="font-size: 32px; margin: .1em;" class="fa-solid fa-dice-${pips[i]}"></i>`, ""));
-                    });
-         },
-         buttons: {
-             roll : { label : `Roll`, callback : (html) => { 
-                      return html.find(`input[name="formula"]`).val();
-                      }
-                  },
-             cancel: { label : "Cancel", callback : (html) => { 
-                      return ''
-                      }
-                  }
-         },
-         default: 'roll',
-         close:   html => {return ''}
-         },position
-        );
-console.log(formula);
-return formula;
-}
-
 Hooks.once("setup", async () => {
+  let fonts = game.settings.get('core', 'fonts')
+  fonts["d6"] = {
+    "editor": true,
+    "fonts": [
+      {
+        "urls": [
+          "modules/ezd6-roll-messages/d6-Regular.otf"
+        ],
+        "weight": 400,
+        "style": "normal"
+      }
+    ]
+  }
+  game.settings.set('core', 'fonts', fonts)
+  
   game.settings.register('ezd6-roll-messages', 'toHitForPlayers', {
     name: `To Hit For Players`,
     hint: `Determines whether to display monster to hit value in chat card for Players`,
@@ -996,6 +717,8 @@ Hooks.once("setup", async () => {
 });
 
 Hooks.on('diceSoNiceReady', (dice3d) => {
+
+  
   dice3d.addSystem({id:"ezd6",name:"⁂ EZD6 (d6, special)"},false);
 
   dice3d.addDicePreset({
