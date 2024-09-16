@@ -1,5 +1,6 @@
 var ezd6 = {};
-ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}" style="-webkit-text-stroke: 1px black;"></i>`:`<i class="fa-solid fa-square" style="-webkit-text-stroke: 1px black;"></i>`);
+//ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<i class="fa-solid fa-dice-${p}" style="-webkit-text-stroke: 1px black;"></i>`:`<i class="fa-solid fa-square" style="-webkit-text-stroke: 1px black;"></i>`);
+ezd6.d6pips = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'].map((p,i)=>i?`<span>&#x268${i-1}</span>`:``);
 ezd6.herodice = `<i class="fa-solid fa-square" style="color:#aef601;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.karma = `<i class="fa-solid fa-circle" style="color:gold;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>`;
 ezd6.strikes = '<i class="fa-solid fa-heart"  style="color:red;background:unset;border:unset; -webkit-text-stroke: 1px black;"></i>';
@@ -687,7 +688,8 @@ ezd6.useHeroDie = async function(message) {
   //await ezd6.socket.executeAsGM("updateChatMessage", message.id, {flags:{ezd6:{results, actions}}});
 }
 
-Hooks.once("setup", async () => {
+
+Hooks.once('ready', ()=>{
   let fonts = game.settings.get('core', 'fonts')
   fonts["d6"] = {
     "editor": true,
@@ -702,6 +704,10 @@ Hooks.once("setup", async () => {
     ]
   }
   game.settings.set('core', 'fonts', fonts)
+})
+
+Hooks.once("setup", async () => {
+
   
   game.settings.register('ezd6-roll-messages', 'toHitForPlayers', {
     name: `To Hit For Players`,
